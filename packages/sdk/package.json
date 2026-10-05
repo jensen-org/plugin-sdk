@@ -45,5 +45,9 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/jensen-org/plugin-sdk/issues"
+  },
+  "homepage": "https://github.com/jensen-org/plugin-sdk#readme"
 }

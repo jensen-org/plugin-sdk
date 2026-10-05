@@ -9,7 +9,7 @@ const good = {
   author: "a",
   jensen: {
     id: "dev.me.hello",
-    minAppVersion: "0.2.0",
+    minAppVersion: "0.3.0",
     permissions: { workspace: true, editor: "write", fs: ["docs"] },
   },
 };
@@ -20,7 +20,7 @@ describe("validatePackage", () => {
   });
 
   test("asks for what Jensen shows before an install", () => {
-    const fields = validatePackage({ jensen: { minAppVersion: "0.2.0" } }).map((p) => p.field);
+    const fields = validatePackage({ jensen: { minAppVersion: "0.3.0" } }).map((p) => p.field);
     expect(fields).toEqual(["name", "version", "description", "author"]);
   });
 

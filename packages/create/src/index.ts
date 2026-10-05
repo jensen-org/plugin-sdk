@@ -39,7 +39,7 @@ export function files(answers: Answers): Record<string, string> {
     devDependencies: { typescript: "^5.6.0" },
     jensen: {
       id: answers.id,
-      minAppVersion: "0.2.0",
+      minAppVersion: "0.3.0",
       permissions: { workspace: true },
     },
   };

@@ -11,7 +11,7 @@
   "jensen": {
     "id": "dev.jensen.hello-pane",
     "category": "example",
-    "minAppVersion": "0.2.0",
+    "minAppVersion": "0.3.0",
     "permissions": {
       "workspace": true,
       "theme": true,

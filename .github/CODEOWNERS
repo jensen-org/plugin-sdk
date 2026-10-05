@@ -1,0 +1,11 @@
+* @pallandir
+/.github/ @pallandir
+/.github/CODEOWNERS @pallandir
+/protocol/ @pallandir
+/scripts/ @pallandir
+/api/ @pallandir
+/package.json @pallandir
+/bun.lock @pallandir
+/packages/*/package.json @pallandir
+/.changeset/ @pallandir
+/SECURITY.md @pallandir
