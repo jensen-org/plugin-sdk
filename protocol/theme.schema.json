@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jensen.dev/schema/theme.schema.json",
+  "title": "Jensen theme",
+  "description": "A complete theme: workbench chrome, editor syntax roles, and terminal ANSI slots. Built-in themes and plugin-contributed themes use this identical format. Every color that carries the theme's identity is authored here; Jensen derives only state variants (hover, focus, disabled alphas) and elevation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "family", "variant", "appearance", "ui", "syntax", "ansi"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Stable identifier, persisted in user settings."
+    },
+    "name": { "type": "string", "minLength": 1, "description": "Full display name." },
+    "family": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Group label in the theme picker, shared by every variant of one upstream project."
+    },
+    "variant": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Label within the family, e.g. \"Mocha\"."
+    },
+    "appearance": { "enum": ["light", "dark"] },
+    "order": {
+      "type": "integer",
+      "description": "Sort position within the family. Defaults to 0."
+    },
+    "selectionAlpha": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "description": "Opacity applied to ui.selection. Set this when the palette names an overlay tone rather than a surface tone: the same alpha over a lighter color washes the selected text out. Defaults to 0.55 on dark themes and 0.45 on light ones."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "revision", "license"],
+      "description": "Upstream provenance for a ported theme. Pin the revision the colors were read from.",
+      "properties": {
+        "repository": { "type": "string", "format": "uri" },
+        "revision": { "type": "string", "minLength": 7 },
+        "license": { "type": "string", "minLength": 1 }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Workbench chrome. Required roles must be authored; optional roles fall back to the aliased role named in their description.",
+      "required": [
+        "bg",
+        "bgAlt",
+        "bgInset",
+        "chrome",
+        "chromeAlt",
+        "surface",
+        "surfaceLit",
+        "fg",
+        "fgMuted",
+        "fgDim",
+        "border",
+        "borderSubtle",
+        "borderStrong",
+        "primary",
+        "onPrimary",
+        "red",
+        "orange",
+        "yellow",
+        "green",
+        "teal",
+        "cyan",
+        "blue",
+        "purple",
+        "magenta",
+        "selection",
+        "cursor",
+        "lineNumber",
+        "added",
+        "modified",
+        "removed"
+      ],
+      "properties": {
+        "bg": { "$ref": "#/$defs/color", "description": "Editor and main canvas." },
+        "bgAlt": {
+          "$ref": "#/$defs/color",
+          "description": "Secondary canvas: empty states, insets."
+        },
+        "bgInset": {
+          "$ref": "#/$defs/color",
+          "description": "Deepest well: terminal, sunken panes."
+        },
+        "chrome": { "$ref": "#/$defs/color", "description": "Sidebars, activity rail, tab bar." },
+        "chromeAlt": { "$ref": "#/$defs/color", "description": "Status bar, panel headers." },
+        "surface": { "$ref": "#/$defs/color", "description": "Cards, inputs, hover fills." },
+        "surfaceLit": { "$ref": "#/$defs/color", "description": "Raised or active surface." },
+        "fg": { "$ref": "#/$defs/color", "description": "Primary text." },
+        "fgMuted": {
+          "$ref": "#/$defs/color",
+          "description": "Secondary text. Must reach 3:1 on bg."
+        },
+        "fgDim": { "$ref": "#/$defs/color", "description": "Tertiary text and icons." },
+        "border": { "$ref": "#/$defs/color", "description": "Default pane and control separator." },
+        "borderSubtle": { "$ref": "#/$defs/color", "description": "Low-emphasis separator." },
+        "borderStrong": {
+          "$ref": "#/$defs/color",
+          "description": "Emphasized separator, input outlines."
+        },
+        "primary": {
+          "$ref": "#/$defs/color",
+          "description": "Accent for selected and primary actions."
+        },
+        "onPrimary": {
+          "$ref": "#/$defs/color",
+          "description": "Text and icons on a filled primary."
+        },
+        "red": { "$ref": "#/$defs/color" },
+        "orange": { "$ref": "#/$defs/color" },
+        "yellow": { "$ref": "#/$defs/color" },
+        "green": { "$ref": "#/$defs/color" },
+        "teal": { "$ref": "#/$defs/color" },
+        "cyan": { "$ref": "#/$defs/color" },
+        "blue": { "$ref": "#/$defs/color" },
+        "purple": { "$ref": "#/$defs/color" },
+        "magenta": { "$ref": "#/$defs/color" },
+        "selection": {
+          "$ref": "#/$defs/color",
+          "description": "Editor selection fill, applied at partial alpha."
+        },
+        "cursor": { "$ref": "#/$defs/color" },
+        "lineNumber": { "$ref": "#/$defs/color" },
+        "added": { "$ref": "#/$defs/color", "description": "Git and diff: added." },
+        "modified": { "$ref": "#/$defs/color", "description": "Git and diff: modified." },
+        "removed": { "$ref": "#/$defs/color", "description": "Git and diff: removed." },
+        "secondary": { "$ref": "#/$defs/color", "description": "Optional. Falls back to magenta." },
+        "success": { "$ref": "#/$defs/color", "description": "Optional. Falls back to green." },
+        "warning": { "$ref": "#/$defs/color", "description": "Optional. Falls back to yellow." },
+        "danger": { "$ref": "#/$defs/color", "description": "Optional. Falls back to red." },
+        "info": { "$ref": "#/$defs/color", "description": "Optional. Falls back to blue." },
+        "selectionMatch": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to selection."
+        },
+        "lineNumberActive": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to fg."
+        },
+        "matchingBracket": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to surfaceLit."
+        },
+        "searchMatch": { "$ref": "#/$defs/color", "description": "Optional. Falls back to yellow." }
+      }
+    },
+    "syntax": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Editor syntax roles. Required roles must be authored; optional roles fall back to the aliased role named in their description.",
+      "required": [
+        "comment",
+        "keyword",
+        "string",
+        "number",
+        "type",
+        "function",
+        "property",
+        "variable",
+        "operator",
+        "constant",
+        "tag",
+        "punctuation"
+      ],
+      "properties": {
+        "comment": { "$ref": "#/$defs/color" },
+        "keyword": { "$ref": "#/$defs/color" },
+        "string": { "$ref": "#/$defs/color" },
+        "number": { "$ref": "#/$defs/color" },
+        "type": { "$ref": "#/$defs/color" },
+        "function": { "$ref": "#/$defs/color" },
+        "property": { "$ref": "#/$defs/color" },
+        "variable": { "$ref": "#/$defs/color" },
+        "operator": { "$ref": "#/$defs/color" },
+        "constant": { "$ref": "#/$defs/color" },
+        "tag": { "$ref": "#/$defs/color" },
+        "punctuation": { "$ref": "#/$defs/color" },
+        "controlKeyword": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to keyword."
+        },
+        "storageType": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to keyword."
+        },
+        "docComment": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to comment."
+        },
+        "stringEscape": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to constant."
+        },
+        "regexp": { "$ref": "#/$defs/color", "description": "Optional. Falls back to string." },
+        "boolean": { "$ref": "#/$defs/color", "description": "Optional. Falls back to constant." },
+        "class": { "$ref": "#/$defs/color", "description": "Optional. Falls back to type." },
+        "namespace": { "$ref": "#/$defs/color", "description": "Optional. Falls back to type." },
+        "method": { "$ref": "#/$defs/color", "description": "Optional. Falls back to function." },
+        "attribute": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to property."
+        },
+        "parameter": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to variable."
+        },
+        "bracket": {
+          "$ref": "#/$defs/color",
+          "description": "Optional. Falls back to punctuation."
+        },
+        "link": { "$ref": "#/$defs/color", "description": "Optional. Falls back to function." },
+        "heading": { "$ref": "#/$defs/color", "description": "Optional. Falls back to function." },
+        "invalid": { "$ref": "#/$defs/color", "description": "Optional. Falls back to ui.red." }
+      }
+    },
+    "ansi": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The 16 terminal slots. Author these from the upstream project's published terminal mapping.",
+      "required": [
+        "black",
+        "red",
+        "green",
+        "yellow",
+        "blue",
+        "magenta",
+        "cyan",
+        "white",
+        "brightBlack",
+        "brightRed",
+        "brightGreen",
+        "brightYellow",
+        "brightBlue",
+        "brightMagenta",
+        "brightCyan",
+        "brightWhite"
+      ],
+      "properties": {
+        "black": { "$ref": "#/$defs/color" },
+        "red": { "$ref": "#/$defs/color" },
+        "green": { "$ref": "#/$defs/color" },
+        "yellow": { "$ref": "#/$defs/color" },
+        "blue": { "$ref": "#/$defs/color" },
+        "magenta": { "$ref": "#/$defs/color" },
+        "cyan": { "$ref": "#/$defs/color" },
+        "white": { "$ref": "#/$defs/color" },
+        "brightBlack": { "$ref": "#/$defs/color" },
+        "brightRed": { "$ref": "#/$defs/color" },
+        "brightGreen": { "$ref": "#/$defs/color" },
+        "brightYellow": { "$ref": "#/$defs/color" },
+        "brightBlue": { "$ref": "#/$defs/color" },
+        "brightMagenta": { "$ref": "#/$defs/color" },
+        "brightCyan": { "$ref": "#/$defs/color" },
+        "brightWhite": { "$ref": "#/$defs/color" }
+      }
+    }
+  },
+  "$defs": {
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+  }
+}

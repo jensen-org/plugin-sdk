@@ -1,0 +1,40 @@
+{
+  "name": "create-jensen-plugin",
+  "version": "0.1.0",
+  "description": "Scaffold a Jensen plugin: npm create jensen-plugin",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-jensen-plugin": "./bin/create-jensen-plugin.mjs"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jensen-org/plugin-sdk.git",
+    "directory": "packages/create"
+  },
+  "dependencies": {
+    "jensen-plugin-sdk": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test"
+  }
+}

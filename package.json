@@ -1,0 +1,35 @@
+{
+  "name": "jensen-plugin-sdk-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "examples/*",
+    "docs"
+  ],
+  "scripts": {
+    "protocol:generate": "node scripts/generate-protocol.mjs",
+    "protocol:check": "node scripts/generate-protocol.mjs --check && node scripts/check-protocol.mjs",
+    "build": "bun run --filter './packages/*' build",
+    "typecheck": "bun run --filter './packages/*' typecheck && bun run --filter './examples/*' typecheck",
+    "lint": "biome check --error-on-warnings .",
+    "format": "biome check --write .",
+    "test": "bun run --filter './packages/*' test",
+    "api:check": "node scripts/api-report.mjs --check",
+    "api:update": "node scripts/api-report.mjs",
+    "docs:dev": "bun run --filter docs dev",
+    "docs:build": "bun run --filter docs build",
+    "check": "bun run protocol:check && bun run lint && bun run build && bun run typecheck && bun run test && bun run api:check",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "bun run build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@changesets/cli": "^2.27.0",
+    "typescript": "^5.6.0",
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0"
+  }
+}
