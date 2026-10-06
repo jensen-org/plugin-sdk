@@ -6,8 +6,8 @@ import {
   Plugin,
   Setting,
   SettingTab,
-  ui,
-} from "jensen-plugin-sdk";
+} from "@jensen-org/plugin-sdk";
+import * as ui from "@jensen-org/plugin-sdk/ui";
 
 interface Data {
   greeting: string;

@@ -1,5 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "noEmit": true, "noImplicitOverride": false, "types": [] },
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noImplicitOverride": false,
+    "types": [],
+    "paths": {
+      "@jensen-org/plugin-sdk": ["../../src/index.ts"],
+      "@jensen-org/plugin-sdk/ui": ["../../src/ui/index.ts"]
+    }
+  },
   "include": ["src"]
 }

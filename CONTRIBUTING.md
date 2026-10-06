@@ -9,7 +9,7 @@ bun run check
 
 ## Branches and releases
 
-Work on a topic branch or `develop`. Changes reach `main` by pull request. Add a changeset (`bun run changeset`) for any change to a published package. The four packages version together.
+Work on a topic branch or `develop`. Changes reach `main` by pull request. Add a changeset (`bun run changeset`) for any change to the published package.
 
 A release is a `v<version>` tag on a commit that is already on `main`, approved in the `release` environment.
 

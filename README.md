@@ -4,11 +4,11 @@ Build extensions for [Jensen](https://github.com/jensen-org/jensen): panes, comm
 menus, and typed access to the project's files, the code editor, the layout and the theme.
 
 ```bash
-npm create jensen-plugin@latest my-plugin
+npx @jensen-org/plugin-sdk create my-plugin
 ```
 
 ```ts
-import { Notice, Plugin } from "jensen-plugin-sdk";
+import { Notice, Plugin } from "@jensen-org/plugin-sdk";
 
 export default class Hello extends Plugin {
   onload() {
@@ -22,16 +22,17 @@ export default class Hello extends Plugin {
 }
 ```
 
-## Packages
+## One package
 
-| Package | What it is |
+| Import | What it is |
 |---|---|
-| [`jensen-plugin-sdk`](packages/sdk) | The one class to extend, the object graph (`app.workspace`, `editor`, `files`, `theme`, ...), the build CLI and a test host. Re-exports the others |
-| [`jensen-ui`](packages/ui) | Typed builders for the interface a pane describes |
-| [`jensen-plugin-protocol`](packages/protocol) | The wire protocol as types, generated from the host's schema |
-| [`create-jensen-plugin`](packages/create) | The scaffolder |
+| `@jensen-org/plugin-sdk` | The one class to extend and the object graph (`app.workspace`, `editor`, `files`, `theme`, ...) |
+| `@jensen-org/plugin-sdk/ui` | Typed builders for the interface a pane describes |
+| `@jensen-org/plugin-sdk/protocol` | The wire protocol as types, generated from the host's schema |
+| `@jensen-org/plugin-sdk/testing` | `TestHost`, a stand in for Jensen in your tests |
+| `jensen-plugin` (bin) | `create`, `build`, `dev`, `validate` and `publish` |
 
-A plugin depends on `jensen-plugin-sdk` and nothing else.
+A plugin depends on `@jensen-org/plugin-sdk` and nothing else.
 
 ## Publish
 
@@ -48,7 +49,7 @@ See the publishing guide in `docs/guide/publishing.md`.
 ## Rules the SDK keeps
 
 - Jensen has **three pages and a plugin cannot add or change them**. Panes are the open ended surface.
-- **No method exposes a stored secret**, keychain item or credential. A guard in the protocol package and in Jensen fails the build if one appears.
+- **No method exposes a stored secret**, keychain item or credential. A guard in the protocol module and in Jensen fails the build if one appears.
 - Every capability a plugin uses is declared in its manifest and granted by the user; Jensen enforces it on each call.
 
 ## Develop this repo

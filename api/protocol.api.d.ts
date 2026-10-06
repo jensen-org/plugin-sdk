@@ -1,4 +1,4 @@
-// generated.d.ts
+// protocol/generated.d.ts
 export declare const API_VERSION: 1;
 export declare const ERROR_CODES: readonly ["bad_request", "permission_denied", "not_found", "failed", "cancelled", "rate_limited", "too_busy", "killed", "io_budget_exceeded", "unsupported"];
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -920,5 +920,5 @@ export interface EventMap {
 export type EventName = keyof EventMap;
 export declare const EVENT_CAPABILITY: Record<EventName, Capability>;
 
-// index.d.ts
+// protocol/index.d.ts
 export * from "./generated.ts";

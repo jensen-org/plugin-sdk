@@ -6,6 +6,6 @@
 /api/ @pallandir
 /package.json @pallandir
 /bun.lock @pallandir
-/packages/*/package.json @pallandir
+/package.json @pallandir
 /.changeset/ @pallandir
 /SECURITY.md @pallandir

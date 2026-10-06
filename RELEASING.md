@@ -2,23 +2,27 @@
 
 Everything the repository can prepare is done. These steps need your npm and GitHub accounts, so they are yours.
 
-## 1. npm packages
+## 1. npm package
 
-npm trusted publishing can only be configured for a package that exists. Pick one route.
+npm trusted publishing can only be configured for a package that exists, so the first publish is a bootstrap.
+Pick one route.
 
 Route A, bootstrap with a token (recommended):
 
-1. On npmjs.com create a granular access token with publish rights for the `jensen-plugin-protocol`, `jensen-ui`,
-   `jensen-plugin-sdk` and `create-jensen-plugin` names.
+1. On npmjs.com create a granular access token with publish rights for the `@jensen-org/plugin-sdk` name.
 2. Add it as the secret `NPM_TOKEN` in the GitHub environment `release`. The release workflow uses it only when it is set.
-3. After the first release, set up the trusted publishers below, then delete the secret.
+3. After the first release, set up the trusted publisher below, then delete the secret.
 
-Route B, publish once by hand: `bun run build`, then `npm publish --access public --workspace packages/<name>` in the
-order protocol, ui, sdk, create.
+Route B, publish once by hand: `bun run build`, then `npm publish --access public`.
 
-Trusted publishers, for each of the four packages, on npmjs.com under Settings, Trusted Publisher: GitHub Actions,
-owner `jensen-org`, repository `plugin-sdk`, workflow `release.yml`, environment `release`. Then turn on
-"Require two-factor authentication and disallow tokens".
+Trusted publisher, once the package exists (npm 11.10 or newer):
+
+```bash
+npx -y npm@latest trust github @jensen-org/plugin-sdk --repo jensen-org/plugin-sdk --file release.yml --env release --allow-publish --yes
+```
+
+Or on npmjs.com under Settings, Trusted Publisher: GitHub Actions, owner `jensen-org`, repository `plugin-sdk`,
+workflow `release.yml`, environment `release`. Then turn on "Require two-factor authentication and disallow tokens".
 
 ## 2. GitHub
 
@@ -30,13 +34,13 @@ owner `jensen-org`, repository `plugin-sdk`, workflow `release.yml`, environment
 ## 3. Cut the release
 
 - [ ] Merge `develop` into `main` by pull request.
-- [ ] On `main`, run `bun run version-packages` (applies the changesets, all four packages move together to `0.1.0`),
-      then commit and push the result. The packages already read `0.1.0`, so with no pending changeset this changes nothing.
+- [ ] On `main`, run `bun run version-packages` (applies the changesets), then commit and push the result. The
+      package already reads `0.1.0`, so with no pending changeset this changes nothing.
 - [ ] Check `bun run check` passes.
 - [ ] Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
-- [ ] Approve the run in the `release` environment and confirm the four packages appear on npm.
+- [ ] Approve the run in the `release` environment and confirm `@jensen-org/plugin-sdk` appears on npm.
 
 ## 4. After
 
-- [ ] Remove `NPM_TOKEN` from the `release` environment once the trusted publishers are in place.
+- [ ] Remove `NPM_TOKEN` from the `release` environment once the trusted publisher is in place.
 - [ ] Open the docs site at `https://jensen-org.github.io/plugin-sdk/` and check the publishing guide.

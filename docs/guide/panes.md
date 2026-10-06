@@ -2,11 +2,12 @@
 
 ## Declarative panes
 
-Extend `PaneView` and return `jensen-ui` nodes. Jensen draws them with its own components, so the pane
+Extend `PaneView` and return `@jensen-org/plugin-sdk/ui` nodes. Jensen draws them with its own components, so the pane
 matches the app and follows the theme with no CSS.
 
 ```ts
-import { PaneView, ui } from "jensen-plugin-sdk";
+import { PaneView } from "@jensen-org/plugin-sdk";
+import * as ui from "@jensen-org/plugin-sdk/ui";
 
 class Counter extends PaneView<{ n: number }> {
   render() {

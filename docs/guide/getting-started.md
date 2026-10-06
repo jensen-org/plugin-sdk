@@ -1,7 +1,7 @@
 # Getting started
 
 ```bash
-npm create jensen-plugin@latest my-plugin
+npx @jensen-org/plugin-sdk create my-plugin
 cd my-plugin
 npm install
 npm run build
@@ -13,7 +13,7 @@ Install the `release/` folder `jensen-plugin publish` assembled from Jensen's Se
 A plugin is one class:
 
 ```ts
-import { Notice, Plugin } from "jensen-plugin-sdk";
+import { Notice, Plugin } from "@jensen-org/plugin-sdk";
 
 export default class Hello extends Plugin {
   onload() {
@@ -37,5 +37,6 @@ purpose.
 
 ## One dependency
 
-`jensen-plugin-sdk` re-exports `jensen-ui` (as `ui`) and the protocol types, so a plugin needs only one
-package.
+`@jensen-org/plugin-sdk` is the only dependency a plugin needs. It ships the pane builders as
+`@jensen-org/plugin-sdk/ui`, the protocol types as `@jensen-org/plugin-sdk/protocol` and the test host as
+`@jensen-org/plugin-sdk/testing`. `bunx @jensen-org/plugin-sdk create my-plugin` scaffolds the same plugin.

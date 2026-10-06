@@ -6,7 +6,7 @@
   "author": "Jensen",
   "type": "module",
   "dependencies": {
-    "jensen-plugin-sdk": "workspace:*"
+    "@jensen-org/plugin-sdk": "^0.1.0"
   },
   "jensen": {
     "id": "dev.jensen.hello-pane",

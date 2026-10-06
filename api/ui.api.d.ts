@@ -1,5 +1,5 @@
-// index.d.ts
-import type { Cell, Node, TableColumn, Tone, TreeNode } from "jensen-plugin-protocol";
+// ui/index.d.ts
+import type { Cell, Node, TableColumn, Tone, TreeNode } from "../protocol/index.ts";
 export type { Cell, TableColumn, Tone, TreeNode };
 export type Callback<T = void> = (payload: T) => void | Promise<void>;
 type Replace<N, K extends string, V> = Omit<N, K> & {
@@ -10,7 +10,7 @@ type Variant<T extends Node["type"]> = Extract<Node, {
 }>;
 /**
  * The tree a pane describes. It mirrors the protocol's node shapes, with each handler written as a
- * plain function. `jensen-plugin-sdk` turns the functions into handler ids on the way to Jensen and
+ * plain function. `@jensen-org/plugin-sdk` turns the functions into handler ids on the way to Jensen and
  * calls them again when the user interacts.
  */
 export type UiNode = Variant<"heading"> | Variant<"text"> | Variant<"code"> | Variant<"markdown"> | Variant<"badge"> | Variant<"divider"> | Replace<Variant<"stack">, "children", UiNode[]> | Replace<Variant<"row">, "children", UiNode[]> | Replace<Variant<"toolbar">, "children", UiNode[]> | Replace<Variant<"split">, "children", UiNode[]> | Replace<Variant<"section">, "children", UiNode[]> | {

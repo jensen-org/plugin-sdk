@@ -15,12 +15,12 @@ export declare class AppSettings extends Events<{
 }
 
 // app.d.ts
-import type { MethodMap, MethodName } from "jensen-plugin-protocol";
 import { AppSettings } from "./app-settings.ts";
 import { Commands, Keymap } from "./commands.ts";
 import type { HostConnection } from "./connection.ts";
 import { Editor } from "./editor.ts";
 import { Files } from "./files.ts";
+import type { MethodMap, MethodName } from "./protocol/index.ts";
 import { Git, Graph, Knowledge, Net } from "./services.ts";
 import { Theme } from "./theme.ts";
 import { Workspace } from "./workspace.ts";
@@ -69,6 +69,20 @@ export declare function wrapper(entry: string): string;
 export declare function checkProject(cwd: string): Problem[];
 export declare function buildOnce(options: BuildOptions): Promise<void>;
 export declare function watch(options: BuildOptions, onRebuild: () => void): Promise<() => Promise<void>>;
+
+// cli/create.d.ts
+export interface Answers {
+    directory: string;
+    id: string;
+    name: string;
+    description: string;
+    author: string;
+    sdkVersion: string;
+}
+export declare function slug(text: string): string;
+export declare function files(answers: Answers): Record<string, string>;
+export declare function write(root: string, entries: Record<string, string>): string[];
+export declare function create(argv: string[]): Promise<number>;
 
 // cli/main.d.ts
 export declare function main(argv: string[]): Promise<number>;
@@ -179,8 +193,8 @@ export declare class Component {
 }
 
 // connection.d.ts
-import { type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName } from "jensen-plugin-protocol";
 import { type Disposable } from "./disposable.ts";
+import { type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName } from "./protocol/index.ts";
 export type CallbackHandlers = {
     [K in CallbackName]?: (params: CallbackMap[K]["params"]) => CallbackMap[K]["result"] | Promise<CallbackMap[K]["result"]>;
 };
@@ -230,9 +244,9 @@ export declare class DisposableStore implements Disposable {
 export declare function toDisposable(cleanup: () => void): Disposable;
 
 // editor.d.ts
-import type { ActiveEditor, Decoration, Position, Range, Tone } from "jensen-plugin-protocol";
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
+import type { ActiveEditor, Decoration, Position, Range, Tone } from "./protocol/index.ts";
 export interface EditorSelection {
     text: string;
     from: Position;
@@ -288,7 +302,7 @@ export declare class Editor extends Events<{
 }
 
 // errors.d.ts
-import type { Capability, ErrorCode } from "jensen-plugin-protocol";
+import type { Capability, ErrorCode } from "./protocol/index.ts";
 export declare class HostError extends Error {
     readonly code: ErrorCode;
     readonly capability?: Capability;
@@ -311,10 +325,10 @@ export declare class Events<E extends {
 }
 
 // files.d.ts
-import type { FileStat } from "jensen-plugin-protocol";
 import type { HostConnection } from "./connection.ts";
 import { type Disposable } from "./disposable.ts";
 import { Events } from "./events.ts";
+import type { FileStat } from "./protocol/index.ts";
 export declare abstract class FileSystemEntry {
     readonly path: string;
     constructor(path: string);
@@ -358,9 +372,6 @@ export declare class Files extends Events<{
 }
 
 // index.d.ts
-export * from "jensen-plugin-protocol";
-export type { UiNode } from "jensen-ui";
-export * as ui from "jensen-ui";
 export { App, type Hello } from "./app.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
@@ -373,19 +384,22 @@ export { type EventRef, Events } from "./events.ts";
 export { type FileChange, FileEntry, FileSystemEntry, Files, FolderEntry } from "./files.ts";
 export { CustomPaneView, type PaneContext, type PaneOptions, PaneView, type PaneViewConstructor, } from "./pane.ts";
 export { type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
+export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
 export { ButtonComponent, ColorComponent, DropdownComponent, NumberComponent, Setting, SettingContainer, SettingTab, SliderComponent, TextAreaComponent, TextComponent, ToggleComponent, } from "./settings.ts";
 export { type StartOptions, start } from "./start.ts";
 export { TestHost, type TestHostOptions } from "./testing.ts";
 export { Theme, type ThemeDocument } from "./theme.ts";
+export type { UiNode } from "./ui/index.ts";
+export * as ui from "./ui/index.ts";
 export { ChoiceModal, ConfirmModal, Menu, MenuItem, Notice, type NoticeOptions, PromptModal, StatusBarItem, SuggestModal, } from "./ui.ts";
 export { type LayoutChange, type OpenPaneOptions, PaneLeaf, Workspace } from "./workspace.ts";
 
 // pane.d.ts
-import type { UiNode } from "jensen-ui";
 import type { App } from "./app.ts";
 import type { Plugin } from "./plugin.ts";
+import type { UiNode } from "./ui/index.ts";
 export interface PaneContext<S = unknown> {
     app: App;
     plugin: Plugin;
@@ -394,7 +408,7 @@ export interface PaneContext<S = unknown> {
     state: S;
 }
 /**
- * A pane Jensen draws for the plugin. `render()` returns a tree of `jensen-ui` nodes and Jensen paints
+ * A pane Jensen draws for the plugin. `render()` returns a tree of `@jensen-org/plugin-sdk/ui` nodes and Jensen paints
  * it with its own components, so the pane matches the app and follows the theme. After a handler runs,
  * Jensen asks for `render()` again.
  */
@@ -437,11 +451,11 @@ export interface PaneOptions {
 export declare function isCustom<S>(view: PaneViewConstructor<S>): boolean;
 
 // plugin.d.ts
-import type { API_VERSION } from "jensen-plugin-protocol";
 import type { App } from "./app.ts";
 import { Component } from "./component.ts";
 import { type Disposable } from "./disposable.ts";
 import { type PaneOptions, type PaneViewConstructor } from "./pane.ts";
+import type { API_VERSION } from "./protocol/index.ts";
 import { type CommandSpec, Registry } from "./registry.ts";
 import type { SettingTab } from "./settings.ts";
 import type { ThemeDocument } from "./theme.ts";
@@ -611,9 +625,9 @@ export declare class Net {
 export {};
 
 // settings.d.ts
-import type { SettingControl, Tone } from "jensen-plugin-protocol";
 import type { App } from "./app.ts";
 import type { Plugin } from "./plugin.ts";
+import type { SettingControl, Tone } from "./protocol/index.ts";
 type Change<T> = (value: T) => void | Promise<void>;
 export declare class SettingContainer {
     private readonly thunks;
@@ -736,52 +750,11 @@ export interface StartOptions {
  */
 export declare function start(Ctor: new (app: App) => Plugin, options?: StartOptions): Promise<Plugin>;
 
-// testing.d.ts
-import { type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName, type Surface } from "jensen-plugin-protocol";
-import { HostConnection } from "./connection.ts";
-export interface TestHostOptions {
-    /**
-     * Hand the plugin's end of the port over as `globalThis.__jensenPort`, the way Jensen does at boot,
-     * instead of through `host.connection`. Use it to run a built `main.js` for real.
-     */
-    asGlobalPort?: boolean;
-    surface?: Surface;
-    respond?: {
-        [K in MethodName]?: (params: MethodMap[K]["params"]) => MethodMap[K]["result"] | Promise<MethodMap[K]["result"]>;
-    };
-}
-/**
- * Stands in for Jensen so a plugin can be tested without it. It records every call the plugin makes,
- * answers them, and lets a test play the host's side: run a command, ask a pane to render, fire an event.
- */
-export declare class TestHost {
-    readonly connection: HostConnection;
-    readonly calls: Array<{
-        method: string;
-        params: unknown;
-    }>;
-    private readonly hostPort;
-    private readonly responders;
-    private seq;
-    private readonly pending;
-    constructor(options?: TestHostOptions);
-    respondTo<K extends MethodName>(method: K, fn: (params: MethodMap[K]["params"]) => MethodMap[K]["result"] | Promise<MethodMap[K]["result"]>): this;
-    /** The calls the plugin made to one method, in order. */
-    callsTo<K extends MethodName>(method: K): Array<MethodMap[K]["params"]>;
-    /** Plays the host: asks the plugin to do something and waits for its answer. */
-    request<K extends CallbackName>(method: K, params: CallbackMap[K]["params"]): Promise<CallbackMap[K]["result"]>;
-    emit<K extends EventName>(topic: K, payload: EventMap[K]): void;
-    /** Waits until the plugin's queued messages have been handled. */
-    settle(): Promise<void>;
-    close(): void;
-    private receive;
-}
-
 // theme.d.ts
-import type { ActiveTheme, ThemeInfo } from "jensen-plugin-protocol";
 import type { HostConnection } from "./connection.ts";
 import { type Disposable } from "./disposable.ts";
 import { Events } from "./events.ts";
+import type { ActiveTheme, ThemeInfo } from "./protocol/index.ts";
 /** A theme document, as described by Jensen's `schema/theme.schema.json`. Jensen validates it. */
 export type ThemeDocument = Record<string, unknown> & {
     id: string;
@@ -807,9 +780,9 @@ export declare class Theme extends Events<{
 }
 
 // ui.d.ts
-import type { Severity, Tone } from "jensen-plugin-protocol";
 import type { App } from "./app.ts";
 import type { HostConnection } from "./connection.ts";
+import type { Severity, Tone } from "./protocol/index.ts";
 export interface NoticeOptions {
     severity?: Severity;
     timeoutMs?: number;
@@ -908,9 +881,9 @@ export declare class StatusBarItem {
 }
 
 // workspace.d.ts
-import type { Direction, PaneInfo } from "jensen-plugin-protocol";
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
+import type { Direction, PaneInfo } from "./protocol/index.ts";
 export declare class PaneLeaf {
     private readonly host;
     readonly info: PaneInfo;

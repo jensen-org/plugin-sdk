@@ -18,7 +18,7 @@ CodeMirror counts them.
 Visual only, so `read` is enough:
 
 ```ts
-import { Decorations } from "jensen-plugin-sdk";
+import { Decorations } from "@jensen-org/plugin-sdk";
 
 await this.app.editor.decorate("todos", path, [
   Decorations.mark(10, 14, { tone: "warning", tooltip: "Fix this" }),

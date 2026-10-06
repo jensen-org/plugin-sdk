@@ -2,10 +2,9 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["jensen-plugin-protocol", "jensen-ui", "jensen-plugin-sdk", "create-jensen-plugin"]],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["hello-pane", "jensen-plugin-docs", "jensen-plugin-sdk-monorepo"]
+  "ignore": []
 }

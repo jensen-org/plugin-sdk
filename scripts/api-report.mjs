@@ -1,9 +1,16 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const packages = ["protocol", "ui", "sdk", "create"];
+const dist = resolve(root, "dist");
+const entries = {
+  protocol: (path) => path.startsWith("protocol/"),
+  ui: (path) => path.startsWith("ui/"),
+  testing: (path) => path === "testing.d.ts",
+  sdk: (path) =>
+    !path.startsWith("protocol/") && !path.startsWith("ui/") && path !== "testing.d.ts",
+};
 
 function declarations(dir) {
   return readdirSync(dir, { withFileTypes: true })
@@ -16,9 +23,9 @@ function declarations(dir) {
 }
 
 function report(name) {
-  const dist = resolve(root, "packages", name, "dist");
-  if (!existsSync(dist)) throw new Error(`packages/${name} is not built: run bun run build first`);
+  if (!existsSync(dist)) throw new Error("dist is not built: run bun run build first");
   return declarations(dist)
+    .filter((file) => entries[name](relative(dist, file).split(sep).join("/")))
     .map((file) => `// ${relative(dist, file)}\n${readFileSync(file, "utf8")}`)
     .join("\n");
 }
@@ -26,7 +33,7 @@ function report(name) {
 const check = process.argv.includes("--check");
 let drift = false;
 mkdirSync(resolve(root, "api"), { recursive: true });
-for (const name of packages) {
+for (const name of Object.keys(entries)) {
   const target = resolve(root, "api", `${name}.api.d.ts`);
   const next = report(name);
   if (check) {

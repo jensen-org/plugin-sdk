@@ -4,7 +4,8 @@
 play the host.
 
 ```ts
-import { start, TestHost } from "jensen-plugin-sdk";
+import { start } from "@jensen-org/plugin-sdk";
+import { TestHost } from "@jensen-org/plugin-sdk/testing";
 
 test("registers a command", async () => {
   const host = new TestHost();
