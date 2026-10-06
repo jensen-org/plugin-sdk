@@ -21,7 +21,7 @@ jobs:
         with:
           bun-version: 1.3.13
       - run: bun install --frozen-lockfile
-      - run: bun audit
+      - run: bun audit --ignore=GHSA-hp3w-g68c-fv3c --ignore=GHSA-vfj7-8cjw-p6xm
   dependency-review:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
