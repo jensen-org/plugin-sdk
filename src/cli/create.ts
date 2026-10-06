@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
+import { describeInstall, installSkill } from "./skill.ts";
 
 export interface Answers {
   directory: string;
@@ -179,6 +180,8 @@ export function write(root: string, entries: Record<string, string>): string[] {
   return written;
 }
 
+const VALUED_FLAGS = ["--name", "--id", "--description", "--author"];
+
 function flag(args: string[], name: string): string | undefined {
   const at = args.indexOf(`--${name}`);
   return at >= 0 ? args[at + 1] : undefined;
@@ -197,7 +200,7 @@ async function ask(question: string, fallback: string, yes: boolean): Promise<st
 
 export async function create(argv: string[]): Promise<number> {
   const positional = argv.find(
-    (arg, index) => !arg.startsWith("--") && !argv[index - 1]?.startsWith("--"),
+    (arg, index) => !arg.startsWith("--") && !VALUED_FLAGS.includes(argv[index - 1] ?? ""),
   );
   const yes = argv.includes("--yes") || !process.stdin.isTTY;
   const directory = positional ?? (await ask("Where should it go?", "my-jensen-plugin", yes));
@@ -223,6 +226,12 @@ export async function create(argv: string[]): Promise<number> {
   process.stdout.write(
     `Created ${directory}\n${written.map((file) => `  ${file}`).join("\n")}\n\n`,
   );
+  if (!argv.includes("--no-skill")) {
+    const installed = installSkill({ root });
+    process.stdout.write(
+      `Installed the agent skill for Claude Code and other coding agents\n${describeInstall(installed, root)}\n\n`,
+    );
+  }
   process.stdout.write(`Next:\n  cd ${directory}\n  bun install\n  bun run build\n`);
   return 0;
 }
