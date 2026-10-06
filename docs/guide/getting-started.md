@@ -5,10 +5,10 @@ npm create jensen-plugin@latest my-plugin
 cd my-plugin
 npm install
 npm run build
-jensen publish .
+npx jensen-plugin publish
 ```
 
-Install the folder `jensen publish` assembled from Jensen's Settings, Plugins, Install from GitHub.
+Install the `release/` folder `jensen-plugin publish` assembled from Jensen's Settings, Plugins, Install from GitHub.
 
 A plugin is one class:
 

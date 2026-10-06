@@ -1,14 +1,19 @@
-import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
 import { buildOnce, checkProject, watch } from "./build.ts";
+import { publish } from "./publish.ts";
 
 const USAGE = `jensen-plugin <command>
 
   build      bundle src/main.ts into main.js and check the package.json "jensen" block
-  dev        rebuild main.js on every change (add --publish to run \`jensen publish\` after each build)
+  dev        rebuild main.js on every change (add --publish to assemble release/ after each build)
   validate   check the package.json "jensen" block and the README without building
+  publish    validate, build and assemble release/, then print the plugin store entry
 
 options
-  --minify   minify main.js (build)
+  --minify     minify main.js (build, publish)
+  --no-build   publish the main.js that is already built
+  --release    publish: create the GitHub release for the tag and upload release/
+  --store-pr   publish: open a pull request adding the entry to jensen-org/plugins-store
   --cwd <d>  run in another directory
 `;
 
@@ -27,11 +32,19 @@ function report(cwd: string): boolean {
   return problems.length === 0;
 }
 
-function publish(cwd: string): void {
-  const result = spawnSync("jensen", ["publish", "."], { cwd, stdio: "inherit" });
-  if (result.error) {
-    process.stderr.write(`could not run \`jensen publish\`: ${result.error.message}\n`);
-  }
+async function assemble(cwd: string, args: string[]): Promise<void> {
+  await publish({
+    cwd,
+    minify: flag(args, "minify"),
+    build: !flag(args, "no-build"),
+    release: flag(args, "release"),
+    storePr: flag(args, "store-pr"),
+  });
+}
+
+function target(args: string[], cwd: string): string {
+  const positional = args.find((arg, i) => !arg.startsWith("--") && args[i - 1] !== "--cwd");
+  return positional ? resolve(cwd, positional) : cwd;
 }
 
 export async function main(argv: string[]): Promise<number> {
@@ -48,11 +61,21 @@ export async function main(argv: string[]): Promise<number> {
       await buildOnce({ cwd, minify: flag(args, "minify") });
       return 0;
     }
+    if (command === "publish") {
+      await assemble(target(args, cwd), args);
+      return 0;
+    }
     if (command === "dev") {
       report(cwd);
       const stop = await watch({ cwd, minify: false }, () => {
         process.stdout.write("rebuilt main.js\n");
-        if (flag(args, "publish")) publish(cwd);
+        if (flag(args, "publish")) {
+          publish({ cwd, minify: false, build: false, release: false, storePr: false }).catch(
+            (cause) => {
+              process.stderr.write(`${cause instanceof Error ? cause.message : String(cause)}\n`);
+            },
+          );
+        }
       });
       process.on("SIGINT", () => {
         stop().finally(() => process.exit(0));

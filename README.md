@@ -33,6 +33,18 @@ export default class Hello extends Plugin {
 
 A plugin depends on `jensen-plugin-sdk` and nothing else.
 
+## Publish
+
+```bash
+npx jensen-plugin publish               # validate, build, write release/, print the store entry
+npx jensen-plugin publish --release     # also create the GitHub release and upload release/*
+npx jensen-plugin publish --store-pr    # also open a PR adding the entry to jensen-org/plugins-store
+```
+
+Plugins are listed in the [plugins store](https://github.com/jensen-org/plugins-store). Teams can also add private
+registries in Jensen under Settings, Plugins, read with a token or with the connected GitHub or GitLab account.
+See the publishing guide in `docs/guide/publishing.md`.
+
 ## Rules the SDK keeps
 
 - Jensen has **three pages and a plugin cannot add or change them**. Panes are the open ended surface.
@@ -56,7 +68,8 @@ Public API changes show up as diffs in `api/`. Run `bun run api:update` after on
 
 ## Releasing
 
-Add a changeset (`bun run changeset`). The release workflow, run by hand, opens a version PR and, once that
-merges, publishes with npm provenance. Nothing publishes automatically.
+Add a changeset (`bun run changeset`). A release is a `v<version>` tag on a commit on `main`, approved in the
+`release` environment, published with npm provenance. Nothing publishes automatically. The one time setup is in
+[RELEASING.md](RELEASING.md).
 
 MIT licensed.

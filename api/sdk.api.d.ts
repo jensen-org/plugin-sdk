@@ -73,6 +73,53 @@ export declare function watch(options: BuildOptions, onRebuild: () => void): Pro
 // cli/main.d.ts
 export declare function main(argv: string[]): Promise<number>;
 
+// cli/publish.d.ts
+import type { PackageJson, Problem } from "./validate.ts";
+export declare const RELEASE_DIR = "release";
+export declare const MANIFEST_ASSET = "manifest.json";
+export declare const MAIN_ASSET = "main.js";
+export declare const README_ASSET = "README.md";
+export declare const API_VERSION = 1;
+export declare const STORE_REPO = "jensen-org/plugins-store";
+export interface StoreEntry {
+    id: string;
+    name: string;
+    author: string;
+    description: string;
+    category: string;
+    version: string;
+    min_app_version: string;
+    repo: string;
+    tag?: string;
+    sha256: string;
+}
+export interface Published {
+    manifestJson: string;
+    entry: StoreEntry;
+    releaseDir: string;
+    assets: string[];
+}
+export declare function validateEntry(entry: StoreEntry): Problem[];
+export declare function sha256Hex(bytes: string | Uint8Array): string;
+export declare function assemble(cwd: string, pkg: PackageJson): Published;
+export declare function releaseTag(entry: StoreEntry): string;
+export declare function releaseArgs(entry: StoreEntry, published: Published): string[];
+export declare function entryFile(entry: StoreEntry): string;
+export interface Runner {
+    (command: string, args: string[], cwd?: string): string;
+}
+export declare const run: Runner;
+export declare function createRelease(entry: StoreEntry, published: Published, exec?: Runner): void;
+export declare function openStorePr(entry: StoreEntry, exec?: Runner): string;
+export interface PublishOptions {
+    cwd: string;
+    minify: boolean;
+    build: boolean;
+    release: boolean;
+    storePr: boolean;
+}
+export declare function publish(options: PublishOptions): Promise<StoreEntry>;
+
 // cli/validate.d.ts
 export interface Problem {
     field: string;
@@ -85,7 +132,7 @@ export interface PackageJson {
     author?: unknown;
     jensen?: Record<string, unknown>;
 }
-/** Checks what `jensen publish` will derive a manifest from, so a mistake shows up before a release. */
+/** Checks what `jensen-plugin publish` will derive a manifest from, so a mistake shows up before a release. */
 export declare function validatePackage(pkg: PackageJson): Problem[];
 
 // commands.d.ts
@@ -858,53 +905,6 @@ export declare class StatusBarItem {
     click(): void | Promise<void>;
     remove(): Promise<void>;
     private push;
-}
-
-// vault.d.ts
-import type { FileStat } from "jensen-plugin-protocol";
-import type { HostConnection } from "./connection.ts";
-import { type Disposable } from "./disposable.ts";
-import { Events } from "./events.ts";
-export declare abstract class TAbstractFile {
-    readonly path: string;
-    constructor(path: string);
-    get name(): string;
-}
-export declare class TFile extends TAbstractFile {
-    readonly size: number;
-    readonly modifiedMs?: number | undefined;
-    constructor(path: string, size: number, modifiedMs?: number | undefined);
-    get extension(): string;
-}
-export declare class TFolder extends TAbstractFile {
-}
-export interface VaultChange {
-    path: string;
-    from?: string;
-}
-/**
- * The project's files. Every path is relative to the project root and has to sit inside a directory
- * listed under `fs` in the manifest, which Jensen enforces below the plugin and not in it.
- */
-export declare class Vault extends Events<{
-    create: [VaultChange];
-    modify: [VaultChange];
-    delete: [VaultChange];
-    rename: [VaultChange];
-}> {
-    private readonly host;
-    constructor(host: HostConnection);
-    read(path: string): Promise<string>;
-    write(path: string, contents: string): Promise<null>;
-    list(path: string): Promise<Array<TFile | TFolder>>;
-    stat(path: string): Promise<FileStat | null>;
-    exists(path: string): Promise<boolean>;
-    mkdir(path: string): Promise<null>;
-    delete(path: string, options?: {
-        recursive?: boolean;
-    }): Promise<null>;
-    rename(from: string, to: string): Promise<null>;
-    watch(path: string, listener?: (change: VaultChange) => void): Promise<Disposable>;
 }
 
 // workspace.d.ts

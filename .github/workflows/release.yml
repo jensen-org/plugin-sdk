@@ -38,7 +38,16 @@ jobs:
           done
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - name: Publish the packages that are not on npm yet
+      - name: Bootstrap publish with NPM_TOKEN
+        if: env.HAS_NPM_TOKEN == 'true'
         run: bunx changeset publish
         env:
+          HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+      - name: Publish with trusted publishing
+        if: env.HAS_NPM_TOKEN != 'true'
+        run: bunx changeset publish
+        env:
+          HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
           NPM_CONFIG_PROVENANCE: "true"

@@ -144,11 +144,11 @@ ${answers.description}
 \`\`\`bash
 bun install        # or npm install
 bun run build      # bundles src/main.ts into main.js
-jensen publish .   # assembles release/ and adds it as a development source
+bunx jensen-plugin publish   # assembles release/ and prints the plugin store entry
 \`\`\`
 
 Then install the release folder from Jensen's Settings, Plugins, Install from GitHub, using the sha256
-\`jensen publish\` prints. \`bun run dev --publish\` rebuilds and republishes on every change.
+\`jensen-plugin publish\` prints. \`bun run dev --publish\` rebuilds and reassembles release/ on every change.
 
 ## What it asks for
 

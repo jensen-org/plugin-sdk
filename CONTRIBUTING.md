@@ -15,17 +15,7 @@ A release is a `v<version>` tag on a commit that is already on `main`, approved 
 
 ## First publish of a package
 
-npm trusted publishing can only be configured for a package that already exists, so publish each package once by hand, in this order:
-
-```sh
-bun run build
-npm publish --access public --workspace packages/protocol
-npm publish --access public --workspace packages/ui
-npm publish --access public --workspace packages/sdk
-npm publish --access public --workspace packages/create
-```
-
-Then on npmjs.com, for each package, open Settings, Trusted Publisher, and add GitHub Actions with owner `jensen-org`, repository `plugin-sdk`, workflow `release.yml` and environment `release`. Turn on "Require two-factor authentication and disallow tokens". Later releases need no token.
+See [RELEASING.md](RELEASING.md).
 
 ## The protocol
 

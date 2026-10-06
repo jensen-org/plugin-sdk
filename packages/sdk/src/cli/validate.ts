@@ -33,7 +33,7 @@ export interface PackageJson {
   jensen?: Record<string, unknown>;
 }
 
-/** Checks what `jensen publish` will derive a manifest from, so a mistake shows up before a release. */
+/** Checks what `jensen-plugin publish` will derive a manifest from, so a mistake shows up before a release. */
 export function validatePackage(pkg: PackageJson): Problem[] {
   const problems: Problem[] = [];
   const add = (field: string, message: string) => problems.push({ field, message });

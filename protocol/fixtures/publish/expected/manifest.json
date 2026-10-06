@@ -1,0 +1,37 @@
+{
+  "id": "dev.ada.golden-hello",
+  "name": "Golden Hello",
+  "version": "1.2.0",
+  "minAppVersion": "0.1.0",
+  "apiVersion": 1,
+  "description": "Says hello from a pane",
+  "author": "Ada",
+  "entry": {
+    "main": "main.js"
+  },
+  "permissions": {
+    "graph": false,
+    "knowledge": false,
+    "git": false,
+    "workspace": true,
+    "theme": false,
+    "settings": false,
+    "editor": "read",
+    "fs": [
+      "docs"
+    ],
+    "network": [
+      "example.com"
+    ]
+  },
+  "dist": {
+    "main": {
+      "asset": "main.js",
+      "sha256": "4fef8a42e786c684eb88755dd2fb84b0b62869aaa44be978ac681682ca648e23"
+    },
+    "readme": {
+      "asset": "README.md",
+      "sha256": "b581b279154813167f434765f41450518370ad1c8d295e49c3e53441ae9a3ee9"
+    }
+  }
+}

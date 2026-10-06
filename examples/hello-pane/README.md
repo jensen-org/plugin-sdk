@@ -15,10 +15,10 @@ An example plugin that touches every surface the SDK offers:
 ```bash
 bun install
 bun run build                 # writes main.js
-jensen publish .              # assembles release/ and adds it as a development source
+bunx jensen-plugin publish    # assembles release/ and prints the plugin store entry
 ```
 
-Then install the release folder from Settings, Plugins, Install from GitHub, using the sha256 `jensen publish` printed.
+Then install the release folder from Settings, Plugins, Install from GitHub, using the sha256 `jensen-plugin publish` printed.
 
 ## Why it asks for what it asks for
 
