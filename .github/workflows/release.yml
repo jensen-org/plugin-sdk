@@ -27,25 +27,6 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-      - name: Require the tag to match the package version
-        run: |
-          version="$(node -p "require('./package.json').version")"
-          if [ "$GITHUB_REF_NAME" != "v${version}" ]; then
-            echo "tag $GITHUB_REF_NAME does not match package version ${version}" >&2
-            exit 1
-          fi
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - name: Bootstrap publish with NPM_TOKEN
-        if: env.HAS_NPM_TOKEN == 'true'
-        run: npm publish --provenance --access public
-        env:
-          HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
-      - name: Publish with trusted publishing
-        if: env.HAS_NPM_TOKEN != 'true'
-        run: npm publish --provenance --access public
-        env:
-          HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
-          NPM_CONFIG_PROVENANCE: "true"
+      - run: npm publish --access public
