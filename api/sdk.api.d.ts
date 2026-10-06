@@ -134,6 +134,27 @@ export interface PublishOptions {
 }
 export declare function publish(options: PublishOptions): Promise<StoreEntry>;
 
+// cli/skill.d.ts
+export declare const SKILL_NAME = "jensen-plugin-sdk";
+export type SkillTarget = "agents" | "claude" | "all";
+export interface InstallOptions {
+    root: string;
+    target?: SkillTarget;
+    dir?: string;
+    force?: boolean;
+}
+export interface Installed {
+    destination: string;
+    files: string[];
+}
+export declare function bundledSkillDir(): string;
+export declare function isTarget(value: string): value is SkillTarget;
+export declare function destinationsFor(options: InstallOptions): string[];
+export declare function listFiles(dir: string, base?: string): string[];
+export declare function installSkill(options: InstallOptions): Installed[];
+export declare function describeInstall(installed: Installed[], root: string): string;
+export declare function skill(argv: string[], cwd: string): number;
+
 // cli/validate.d.ts
 export interface Problem {
     field: string;

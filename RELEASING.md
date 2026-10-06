@@ -24,7 +24,6 @@ npx -y npm@latest trust github @jensen-org/plugin-sdk --repo jensen-org/plugin-s
 - [ ] Create the environment `release` (Settings, Environments) with yourself as required reviewer. The release
       workflow waits for your approval.
 - [ ] Create the environment `pr-review` with a required reviewer. CI's `approve` job waits on it.
-- [ ] Settings, Pages, Source: GitHub Actions. The `docs` workflow deploys on every push to `main`.
 
 ## 3. Cut the release
 
@@ -37,4 +36,3 @@ npx -y npm@latest trust github @jensen-org/plugin-sdk --repo jensen-org/plugin-s
 
 ## 4. After
 
-- [ ] Open the docs site at `https://jensen-org.github.io/plugin-sdk/` and check the publishing guide.

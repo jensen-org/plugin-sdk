@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { buildOnce, checkProject, watch } from "./build.ts";
 import { create } from "./create.ts";
 import { publish } from "./publish.ts";
+import { skill } from "./skill.ts";
 
 const USAGE = `jensen-plugin <command>
 
@@ -10,6 +11,7 @@ const USAGE = `jensen-plugin <command>
   dev        rebuild main.js on every change (add --publish to assemble release/ after each build)
   validate   check the package.json "jensen" block and the README without building
   publish    validate, build and assemble release/, then print the plugin store entry
+  skill      install the agent skill: jensen-plugin skill install
 
 options
   --minify     minify main.js (build, publish)
@@ -17,6 +19,12 @@ options
   --release    publish: create the GitHub release for the tag and upload release/
   --store-pr   publish: open a pull request adding the entry to jensen-org/plugins-store
   --cwd <d>  run in another directory
+  --no-skill   create: do not install the agent skill into the new project
+
+skill install options
+  --target <t>  agents, claude or all (default all): .agents/skills and .claude/skills
+  --dir <path>  install to this one directory instead
+  --force       replace a skill that is already installed
 `;
 
 function flag(args: string[], name: string): boolean {
@@ -64,6 +72,7 @@ export async function main(argv: string[]): Promise<number> {
       return 0;
     }
     if (command === "create") return await create(args);
+    if (command === "skill") return skill(args, cwd);
     if (command === "publish") {
       await assemble(target(args, cwd), args);
       return 0;
