@@ -4,25 +4,20 @@ Everything the repository can prepare is done. These steps need your npm and Git
 
 ## 1. npm package
 
-npm trusted publishing can only be configured for a package that exists, so the first publish is a bootstrap.
-Pick one route.
+npm trusted publishing can only be configured for a package that exists, so the first publish is a placeholder.
+No token is stored anywhere.
 
-Route A, bootstrap with a token (recommended):
-
-1. On npmjs.com create a granular access token with publish rights for the `@jensen-org/plugin-sdk` name.
-2. Add it as the secret `NPM_TOKEN` in the GitHub environment `release`. The release workflow uses it only when it is set.
-3. After the first release, set up the trusted publisher below, then delete the secret.
-
-Route B, publish once by hand: `bun run build`, then `npm publish --access public`.
-
-Trusted publisher, once the package exists (npm 11.10 or newer):
+1. Publish a placeholder by hand from an empty folder: `npm publish --access public --tag bootstrap` with the
+   version `0.0.0-bootstrap.0`.
+2. Allow this repository (npm 11.10 or newer):
 
 ```bash
 npx -y npm@latest trust github @jensen-org/plugin-sdk --repo jensen-org/plugin-sdk --file release.yml --env release --allow-publish --yes
 ```
 
-Or on npmjs.com under Settings, Trusted Publisher: GitHub Actions, owner `jensen-org`, repository `plugin-sdk`,
-workflow `release.yml`, environment `release`. Then turn on "Require two-factor authentication and disallow tokens".
+3. On npmjs.com under Settings, turn on "Require two-factor authentication and disallow tokens".
+4. After the first real release, run `npm deprecate @jensen-org/plugin-sdk@0.0.0-bootstrap.0 "placeholder, use 0.1.0 or later"`
+   and `npm dist-tag rm @jensen-org/plugin-sdk bootstrap`.
 
 ## 2. GitHub
 
@@ -42,5 +37,4 @@ workflow `release.yml`, environment `release`. Then turn on "Require two-factor 
 
 ## 4. After
 
-- [ ] Remove `NPM_TOKEN` from the `release` environment once the trusted publisher is in place.
 - [ ] Open the docs site at `https://jensen-org.github.io/plugin-sdk/` and check the publishing guide.
