@@ -20,6 +20,12 @@ async function source() {
   }
   const url = `https://raw.githubusercontent.com/${pinned.repo}/${pinned.ref}/${pinned.path}`;
   const response = await fetch(url);
+  if ([401, 403, 404].includes(response.status)) {
+    process.stderr.write(
+      `skipped: ${url} is not readable (${response.status}). Set JENSEN_REPO to check against a local checkout.\n`,
+    );
+    return null;
+  }
   if (!response.ok) {
     throw new Error(
       `could not fetch ${url}: ${response.status}. Set JENSEN_REPO to a local checkout.`,
@@ -28,7 +34,9 @@ async function source() {
   return { label: url, text: await response.text() };
 }
 
-const { label, text } = await source();
+const upstream = await source();
+if (!upstream) process.exit(0);
+const { label, text } = upstream;
 if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(vendored))) {
   process.stderr.write(
     `protocol/plugin-api.v1.json differs from ${label}. Copy the host's file over it, regenerate, and review the diff.\n`,

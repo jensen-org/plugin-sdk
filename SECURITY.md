@@ -13,4 +13,4 @@ Use GitHub private vulnerability reporting: open the Security tab of this reposi
 - Every change reaches `main` through a pull request with green checks and an approval in the `pr-review` environment.
 - A release is a `v*` tag on a commit already on `main`, approved in the `release` environment, published through npm trusted publishing with provenance. No npm token is stored.
 - Every GitHub Action is pinned to a full commit SHA and workflows run read only unless a job needs more.
-- Secret scanning, push protection and Dependabot are on.
+- Secret scanning and push protection are on.
