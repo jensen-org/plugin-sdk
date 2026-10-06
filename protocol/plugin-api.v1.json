@@ -1,0 +1,1837 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jensen.dev/schema/plugin-api.v1.json",
+  "title": "jensen-plugin-api",
+  "description": "The wire contract between Jensen and a plugin, apiVersion 1. It is the single source of truth: Jensen's broker and the @jensen-org/plugin-sdk are both generated from it. Every message is {v:1, id, kind, ...} sent over a MessagePort handed to the plugin realm at boot. There is deliberately no method that adds a page or a route: Jensen has exactly three pages and panes are the only open ended surface.",
+  "apiVersion": 1,
+  "envelope": {
+    "request": { "v": 1, "id": "number", "kind": "req", "method": "string", "params": "any" },
+    "response": {
+      "v": 1,
+      "id": "number",
+      "kind": "res",
+      "result": "any",
+      "error": "{code, message, capability?}"
+    },
+    "event": { "v": 1, "kind": "evt", "topic": "string", "payload": "any" }
+  },
+  "errorCodes": [
+    "bad_request",
+    "permission_denied",
+    "not_found",
+    "failed",
+    "cancelled",
+    "rate_limited",
+    "too_busy",
+    "killed",
+    "io_budget_exceeded",
+    "unsupported"
+  ],
+  "capabilities": [
+    "none",
+    "graph",
+    "knowledge",
+    "git",
+    "workspace",
+    "theme",
+    "settings",
+    "editor:read",
+    "editor:write",
+    "fs",
+    "network"
+  ],
+  "$defs": {
+    "Handler": {
+      "type": "object",
+      "required": ["handler"],
+      "additionalProperties": false,
+      "properties": {
+        "handler": {
+          "type": "string",
+          "description": "A plugin side callback id. Jensen answers with node.event when it fires."
+        }
+      }
+    },
+    "Tone": { "enum": ["default", "muted", "info", "success", "warning", "danger"] },
+    "Severity": { "enum": ["success", "info", "warn", "error"] },
+    "Direction": { "enum": ["above", "below", "left", "right", "within"] },
+    "Position": {
+      "type": "object",
+      "required": ["offset", "line", "column"],
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "type": "integer",
+          "description": "UTF-16 code unit offset into the document."
+        },
+        "line": { "type": "integer", "description": "Zero based line." },
+        "column": { "type": "integer", "description": "Zero based column in UTF-16 code units." }
+      }
+    },
+    "Range": {
+      "type": "object",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": { "from": { "type": "integer" }, "to": { "type": "integer" } }
+    },
+    "Hotkey": {
+      "type": "object",
+      "required": ["key"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "A chord such as Mod+Shift+D. Mod is Cmd on macOS and Ctrl elsewhere."
+        },
+        "when": {
+          "type": "string",
+          "description": "A context key expression, for example editorFocus or paneFocus:plugin:dev.me.hello/view."
+        }
+      }
+    },
+    "TableColumn": {
+      "type": "object",
+      "required": ["key", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "align": { "enum": ["start", "end"] },
+        "width": { "type": "string" }
+      }
+    },
+    "Cell": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["bar"],
+          "additionalProperties": false,
+          "properties": { "bar": { "type": "number" }, "title": { "type": "string" } }
+        }
+      ]
+    },
+    "TreeNode": {
+      "type": "object",
+      "required": ["key", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "icon": { "type": "string" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/TreeNode" } }
+      }
+    },
+    "Node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "heading" },
+            "text": { "type": "string" },
+            "level": { "enum": [1, 2, 3] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "text" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "code" },
+            "text": { "type": "string" },
+            "language": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "markdown" }, "text": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "badge" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "divider" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "stack" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } },
+            "gap": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "row" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } },
+            "gap": { "type": "number" },
+            "align": { "enum": ["start", "center", "end", "between"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "toolbar" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "split" },
+            "direction": { "enum": ["horizontal", "vertical"] },
+            "sizes": { "type": "array", "items": { "type": "number" } },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "title", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "section" },
+            "title": { "type": "string" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "tabs"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "tabs" },
+            "active": { "type": "string" },
+            "onChange": { "$ref": "#/$defs/Handler" },
+            "tabs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["key", "label", "children"],
+                "additionalProperties": false,
+                "properties": {
+                  "key": { "type": "string" },
+                  "label": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "columns", "rows"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "table" },
+            "columns": { "type": "array", "items": { "$ref": "#/$defs/TableColumn" } },
+            "rows": {
+              "type": "array",
+              "items": { "type": "object", "additionalProperties": { "$ref": "#/$defs/Cell" } }
+            },
+            "empty": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "list" },
+            "items": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "nodes"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "tree" },
+            "nodes": { "type": "array", "items": { "$ref": "#/$defs/TreeNode" } },
+            "selected": { "type": "string" },
+            "onSelect": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "keyValue" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["key", "value"],
+                "additionalProperties": false,
+                "properties": { "key": { "type": "string" }, "value": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "stat" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "hint": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "progress" },
+            "value": { "type": "number" },
+            "label": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "onClick"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "button" },
+            "label": { "type": "string" },
+            "onClick": { "$ref": "#/$defs/Handler" },
+            "icon": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "icon", "label", "onClick"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "iconButton" },
+            "icon": { "type": "string" },
+            "label": { "type": "string", "description": "The tooltip and the accessible name." },
+            "onClick": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "input" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "placeholder": { "type": "string" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "textarea" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "rows": { "type": "integer" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "toggle" },
+            "label": { "type": "string" },
+            "value": { "type": "boolean" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "checkbox" },
+            "label": { "type": "string" },
+            "value": { "type": "boolean" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value", "options", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "select" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["value", "label"],
+                "additionalProperties": false,
+                "properties": { "value": { "type": "string" }, "label": { "type": "string" } }
+              }
+            },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "title"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "empty" },
+            "title": { "type": "string" },
+            "hint": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "spinner" }, "label": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "message" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        }
+      ]
+    },
+    "SettingControl": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "heading" }, "text": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "description" }, "text": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "text" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string" },
+            "placeholder": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "textarea" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "number" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "number" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "toggle" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value", "options"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "dropdown" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["value", "label"],
+                "additionalProperties": false,
+                "properties": { "value": { "type": "string" }, "label": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value", "min", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "slider" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "number" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "color" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string", "description": "#rrggbb" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "label"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "button" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "label": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        }
+      ]
+    },
+    "MenuItem": {
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "icon": { "type": "string" },
+        "disabled": { "type": "boolean" },
+        "separatorBefore": { "type": "boolean" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/MenuItem" } }
+      }
+    },
+    "Decoration": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "from", "to"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "mark" },
+            "from": { "type": "integer" },
+            "to": { "type": "integer" },
+            "tone": { "$ref": "#/$defs/Tone" },
+            "tooltip": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "line"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "line" },
+            "line": { "type": "integer" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "line", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "gutter" },
+            "line": { "type": "integer" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" },
+            "tooltip": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "at", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "hint" },
+            "at": { "type": "integer" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        }
+      ]
+    },
+    "ActiveEditor": {
+      "type": "object",
+      "required": ["path", "languageId", "dirty", "selection", "cursor", "lineCount"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": ["string", "null"],
+          "description": "Null for an unsaved scratch buffer."
+        },
+        "languageId": { "type": "string" },
+        "dirty": { "type": "boolean" },
+        "lineCount": { "type": "integer" },
+        "selection": { "$ref": "#/$defs/Range" },
+        "cursor": { "$ref": "#/$defs/Position" }
+      }
+    },
+    "PaneInfo": {
+      "type": "object",
+      "required": ["instanceId", "kind", "ref", "title", "active"],
+      "additionalProperties": false,
+      "properties": {
+        "instanceId": { "type": "string" },
+        "kind": { "type": "string" },
+        "ref": { "type": "string" },
+        "title": { "type": "string" },
+        "active": { "type": "boolean" },
+        "pluginId": {
+          "type": "string",
+          "description": "Present when the pane belongs to a plugin."
+        },
+        "paneId": {
+          "type": "string",
+          "description": "The id the owning plugin registered it under."
+        }
+      }
+    },
+    "ThemeInfo": {
+      "type": "object",
+      "required": ["id", "name", "appearance"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "appearance": { "enum": ["light", "dark"] }
+      }
+    },
+    "ActiveTheme": {
+      "type": "object",
+      "required": ["id", "appearance", "tokens"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "appearance": { "enum": ["light", "dark"] },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "CSS custom properties, for example --bg-0."
+        }
+      }
+    },
+    "DirEntry": {
+      "type": "object",
+      "required": ["name", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "enum": ["file", "dir"] },
+        "size": { "type": "integer" }
+      }
+    },
+    "FileStat": {
+      "type": "object",
+      "required": ["kind", "size", "modifiedMs"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["file", "dir"] },
+        "size": { "type": "integer" },
+        "modifiedMs": { "type": "integer" }
+      }
+    },
+    "Surface": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "headless" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "paneId", "instanceId", "state"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "pane" },
+            "paneId": { "type": "string" },
+            "instanceId": { "type": "string" },
+            "state": {}
+          }
+        }
+      ]
+    }
+  },
+  "methods": {
+    "plugin.hello": {
+      "summary": "The first call a plugin makes. Jensen answers with who it is running as.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["apiVersion"],
+        "additionalProperties": false,
+        "properties": { "apiVersion": { "type": "integer" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["pluginId", "appVersion", "surface", "theme"],
+        "additionalProperties": false,
+        "properties": {
+          "pluginId": { "type": "string" },
+          "appVersion": { "type": "string" },
+          "surface": { "$ref": "#/$defs/Surface" },
+          "theme": { "$ref": "#/$defs/ActiveTheme" }
+        }
+      }
+    },
+    "plugin.ready": {
+      "summary": "Sent once onload has finished, so Jensen can release activation events.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "null" }
+    },
+    "log": {
+      "summary": "Writes to Jensen's app log under the plugin's name.",
+      "capability": "none",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["level", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "level": { "enum": ["info", "warn", "error"] },
+          "text": { "type": "string" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "storage.load": {
+      "summary": "Reads the plugin's own persisted data. Null before the first save.",
+      "capability": "none",
+      "handler": "kernel",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": {}
+    },
+    "storage.save": {
+      "summary": "Replaces the plugin's own persisted data.",
+      "capability": "none",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["data"],
+        "additionalProperties": false,
+        "properties": { "data": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.currentPage": {
+      "summary": "Which of the three fixed pages is showing. There is no way to add or change pages.",
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "enum": ["session", "code", "notes"] }
+    },
+    "workspace.registerPane": {
+      "summary": "Registers a pane kind. It appears in the pane picker under Plugins and can be opened any number of times unless singleton.",
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id", "title", "render"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "icon": { "type": "string", "description": "A Lucide icon name." },
+          "singleton": { "type": "boolean" },
+          "render": {
+            "enum": ["declarative", "custom"],
+            "description": "declarative: the plugin returns a node tree Jensen draws with its own components. custom: the plugin's bundle runs again inside a sandboxed frame and draws itself."
+          }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.unregisterPane": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.openPane": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["paneId"],
+        "additionalProperties": false,
+        "properties": {
+          "paneId": { "type": "string" },
+          "state": {},
+          "direction": { "$ref": "#/$defs/Direction" },
+          "referenceInstanceId": { "type": "string" },
+          "focus": { "type": "boolean" }
+        }
+      },
+      "result": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      }
+    },
+    "workspace.closePane": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.focusPane": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.movePane": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["instanceId", "direction", "referenceInstanceId"],
+        "additionalProperties": false,
+        "properties": {
+          "instanceId": { "type": "string" },
+          "direction": { "$ref": "#/$defs/Direction" },
+          "referenceInstanceId": { "type": "string" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.listPanes": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/PaneInfo" } }
+    },
+    "workspace.setPaneState": {
+      "summary": "Stores state with the pane so it survives a reload, then re-renders it.",
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["instanceId", "state"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" }, "state": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "workspace.refreshPane": {
+      "summary": "Asks Jensen to call pane.render again. Without an instance it refreshes every pane the plugin owns.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "commands.register": {
+      "summary": "Adds a command to the palette and, with a hotkey, to the keymap. Users can rebind it in Settings.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "icon": { "type": "string" },
+          "category": { "type": "string" },
+          "hotkey": { "$ref": "#/$defs/Hotkey" },
+          "when": { "type": "string" },
+          "checked": {
+            "type": "boolean",
+            "description": "True when the plugin answers command.check to decide availability."
+          }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "commands.unregister": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "commands.execute": {
+      "summary": "Runs any command, including Jensen's own. Plugin command ids are plugin:<pluginId>/<id>.",
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "args": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "commands.list": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "category": { "type": "string" }
+          }
+        }
+      }
+    },
+    "keymap.get": {
+      "summary": "The chords currently bound to a command, after the user's own overrides.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["commandId"],
+        "additionalProperties": false,
+        "properties": { "commandId": { "type": "string" } }
+      },
+      "result": { "type": "array", "items": { "type": "string" } }
+    },
+    "settings.registerTab": {
+      "summary": "Adds a section to Settings under Extensions. Jensen asks for its controls with settings.render and draws them with its own components.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "icon": { "type": "string" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "settings.unregisterTab": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "settings.refreshTab": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "settings.get": {
+      "summary": "Reads one of Jensen's own settings.",
+      "capability": "settings",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["key"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" } }
+      },
+      "result": {}
+    },
+    "settings.set": {
+      "capability": "settings",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["key", "value"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" }, "value": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "theme.get": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "$ref": "#/$defs/ActiveTheme" }
+    },
+    "theme.list": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/ThemeInfo" } }
+    },
+    "theme.set": {
+      "capability": "theme",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "theme.register": {
+      "summary": "Adds a theme document, validated against schema/theme.schema.json.",
+      "capability": "theme",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["document"],
+        "additionalProperties": false,
+        "properties": { "document": { "type": "object" } }
+      },
+      "result": { "type": "null" }
+    },
+    "theme.unregister": {
+      "capability": "theme",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.active": {
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "oneOf": [{ "$ref": "#/$defs/ActiveEditor" }, { "type": "null" }] }
+    },
+    "editor.getText": {
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string", "description": "Defaults to the active editor." }
+        }
+      },
+      "result": { "type": "string" }
+    },
+    "editor.getSelection": {
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": {
+        "type": "object",
+        "required": ["text", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" },
+          "from": { "$ref": "#/$defs/Position" },
+          "to": { "$ref": "#/$defs/Position" }
+        }
+      }
+    },
+    "editor.openFile": {
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "line": { "type": "integer" },
+          "column": { "type": "integer" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.replaceRange": {
+      "summary": "Edits the active buffer as one undoable transaction labelled with the plugin id.",
+      "capability": "editor:write",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["from", "to", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "integer" },
+          "to": { "type": "integer" },
+          "text": { "type": "string" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.replaceSelection": {
+      "capability": "editor:write",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": { "text": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.insert": {
+      "summary": "Inserts at an offset, or at the cursor when none is given.",
+      "capability": "editor:write",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": { "text": { "type": "string" }, "at": { "type": "integer" } }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.save": {
+      "capability": "editor:write",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.setDecorations": {
+      "summary": "Replaces the plugin's decorations under a key. They are visual only and cannot change the buffer, so reading is enough.",
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["key", "path", "decorations"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "path": { "type": "string" },
+          "decorations": { "type": "array", "items": { "$ref": "#/$defs/Decoration" } }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "editor.clearDecorations": {
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["key"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "fs.read": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": { "type": "string" }
+    },
+    "fs.write": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path", "contents"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "contents": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "fs.list": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/DirEntry" } }
+    },
+    "fs.stat": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": { "oneOf": [{ "$ref": "#/$defs/FileStat" }, { "type": "null" }] }
+    },
+    "fs.mkdir": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "fs.delete": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "recursive": { "type": "boolean" } }
+      },
+      "result": { "type": "null" }
+    },
+    "fs.rename": {
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "fs.watch": {
+      "summary": "Starts delivering fs.changed events for a granted directory.",
+      "capability": "fs",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["watchId"],
+        "additionalProperties": false,
+        "properties": { "watchId": { "type": "string" } }
+      }
+    },
+    "fs.unwatch": {
+      "capability": "fs",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["watchId"],
+        "additionalProperties": false,
+        "properties": { "watchId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "ui.notice": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["message"],
+        "additionalProperties": false,
+        "properties": {
+          "message": { "type": "string" },
+          "severity": { "$ref": "#/$defs/Severity" },
+          "timeoutMs": { "type": "integer" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "ui.confirm": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["title", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "confirmLabel": { "type": "string" },
+          "danger": { "type": "boolean" }
+        }
+      },
+      "result": { "type": "boolean" }
+    },
+    "ui.choose": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["title", "message", "choices"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "additionalProperties": false,
+              "properties": { "id": { "type": "string" }, "label": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "result": { "type": ["string", "null"] }
+    },
+    "ui.prompt": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["title"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "placeholder": { "type": "string" },
+          "initial": { "type": "string" },
+          "confirmLabel": { "type": "string" }
+        }
+      },
+      "result": { "type": ["string", "null"] }
+    },
+    "ui.suggest": {
+      "summary": "A searchable list. Resolves to the picked item id, or null when dismissed.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["title", "items"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "placeholder": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "detail": { "type": "string" },
+                "icon": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "result": { "type": ["string", "null"] }
+    },
+    "ui.registerMenu": {
+      "summary": "Contributes items to a context menu. Jensen asks for them with menu.build each time the menu opens.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id", "target"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "target": { "enum": ["explorer", "editor", "pane", "tab"] }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "ui.unregisterMenu": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "ui.setStatus": {
+      "summary": "Creates or updates an item in the status strip.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "icon": { "type": "string" },
+          "tooltip": { "type": "string" },
+          "tone": { "$ref": "#/$defs/Tone" },
+          "clickable": { "type": "boolean" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "ui.removeStatus": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "markdown.registerRenderer": {
+      "summary": "Renders fenced code blocks of one language. Jensen asks for html with markdown.render and sanitizes what comes back.",
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id", "language"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "language": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "markdown.unregisterRenderer": {
+      "capability": "none",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "graph.explainService": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "graph.dependencies": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "graph.impact": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "graph.query": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "knowledge.search": {
+      "capability": "knowledge",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "knowledge.ingest": {
+      "capability": "knowledge",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "git.history": {
+      "capability": "git",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "git.semanticDiff": {
+      "capability": "git",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "net.fetch": {
+      "capability": "network",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["host", "path"],
+        "properties": { "host": { "type": "string" }, "path": { "type": "string" } }
+      },
+      "result": {}
+    }
+  },
+  "callbacks": {
+    "command.run": {
+      "summary": "A command the plugin registered was invoked.",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "args": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "command.check": {
+      "summary": "Whether the command is available right now, so the palette can hide it.",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "boolean" }
+    },
+    "pane.open": {
+      "params": {
+        "type": "object",
+        "required": ["paneId", "instanceId", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "paneId": { "type": "string" },
+          "instanceId": { "type": "string" },
+          "state": {}
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "pane.close": {
+      "params": {
+        "type": "object",
+        "required": ["paneId", "instanceId"],
+        "additionalProperties": false,
+        "properties": { "paneId": { "type": "string" }, "instanceId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "pane.render": {
+      "summary": "Asks a declarative pane for its node tree.",
+      "params": {
+        "type": "object",
+        "required": ["paneId", "instanceId", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "paneId": { "type": "string" },
+          "instanceId": { "type": "string" },
+          "state": {}
+        }
+      },
+      "result": {
+        "type": "object",
+        "required": ["children"],
+        "additionalProperties": false,
+        "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } }
+      }
+    },
+    "node.event": {
+      "summary": "A control inside a rendered node tree fired its handler.",
+      "params": {
+        "type": "object",
+        "required": ["handler"],
+        "additionalProperties": false,
+        "properties": { "handler": { "type": "string" }, "payload": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "settings.render": {
+      "params": {
+        "type": "object",
+        "required": ["tabId"],
+        "additionalProperties": false,
+        "properties": { "tabId": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["controls"],
+        "additionalProperties": false,
+        "properties": {
+          "controls": { "type": "array", "items": { "$ref": "#/$defs/SettingControl" } }
+        }
+      }
+    },
+    "settings.change": {
+      "params": {
+        "type": "object",
+        "required": ["tabId", "key", "value"],
+        "additionalProperties": false,
+        "properties": { "tabId": { "type": "string" }, "key": { "type": "string" }, "value": {} }
+      },
+      "result": { "type": "null" }
+    },
+    "settings.action": {
+      "params": {
+        "type": "object",
+        "required": ["tabId", "key"],
+        "additionalProperties": false,
+        "properties": { "tabId": { "type": "string" }, "key": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "menu.build": {
+      "params": {
+        "type": "object",
+        "required": ["menuId", "context"],
+        "additionalProperties": false,
+        "properties": {
+          "menuId": { "type": "string" },
+          "context": {
+            "type": "object",
+            "description": "What the menu opened on: path for explorer, tab or editor, paneKind for pane."
+          }
+        }
+      },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/MenuItem" } }
+    },
+    "menu.select": {
+      "params": {
+        "type": "object",
+        "required": ["menuId", "itemId", "context"],
+        "additionalProperties": false,
+        "properties": {
+          "menuId": { "type": "string" },
+          "itemId": { "type": "string" },
+          "context": { "type": "object" }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "status.click": {
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "markdown.render": {
+      "params": {
+        "type": "object",
+        "required": ["id", "source"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "source": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["html"],
+        "additionalProperties": false,
+        "properties": { "html": { "type": "string" } }
+      }
+    },
+    "plugin.unload": {
+      "summary": "Jensen is disabling or reloading the plugin. Dispose everything and resolve.",
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "null" }
+    }
+  },
+  "events": {
+    "workspace.paneOpened": {
+      "capability": "workspace",
+      "payload": { "$ref": "#/$defs/PaneInfo" }
+    },
+    "workspace.paneClosed": {
+      "capability": "workspace",
+      "payload": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      }
+    },
+    "workspace.activeChanged": {
+      "capability": "workspace",
+      "payload": { "oneOf": [{ "$ref": "#/$defs/PaneInfo" }, { "type": "null" }] }
+    },
+    "workspace.layoutChanged": {
+      "capability": "workspace",
+      "payload": {
+        "type": "object",
+        "required": ["page", "panes"],
+        "additionalProperties": false,
+        "properties": {
+          "page": { "enum": ["session", "code", "notes"] },
+          "panes": { "type": "array", "items": { "$ref": "#/$defs/PaneInfo" } }
+        }
+      }
+    },
+    "editor.activeChanged": {
+      "capability": "editor:read",
+      "payload": { "oneOf": [{ "$ref": "#/$defs/ActiveEditor" }, { "type": "null" }] }
+    },
+    "editor.changed": {
+      "capability": "editor:read",
+      "payload": {
+        "type": "object",
+        "required": ["path", "lineCount"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": ["string", "null"] }, "lineCount": { "type": "integer" } }
+      }
+    },
+    "editor.selectionChanged": {
+      "capability": "editor:read",
+      "payload": {
+        "type": "object",
+        "required": ["path", "selection", "cursor"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": ["string", "null"] },
+          "selection": { "$ref": "#/$defs/Range" },
+          "cursor": { "$ref": "#/$defs/Position" }
+        }
+      }
+    },
+    "editor.saved": {
+      "capability": "editor:read",
+      "payload": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      }
+    },
+    "theme.changed": { "capability": "none", "payload": { "$ref": "#/$defs/ActiveTheme" } },
+    "fs.changed": {
+      "capability": "fs",
+      "payload": {
+        "type": "object",
+        "required": ["watchId", "kind", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "watchId": { "type": "string" },
+          "kind": { "enum": ["create", "modify", "delete", "rename"] },
+          "path": { "type": "string" },
+          "from": { "type": "string" }
+        }
+      }
+    },
+    "settings.changed": {
+      "capability": "settings",
+      "payload": {
+        "type": "object",
+        "required": ["key", "value"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" }, "value": {} }
+      }
+    },
+    "keymap.changed": {
+      "capability": "none",
+      "payload": { "type": "object", "additionalProperties": false, "properties": {} }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "hello-pane",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Exercises every surface a Jensen plugin can reach: a pane, a setting, a hotkey, the editor, files, the theme and the status strip",
+  "author": "Jensen",
+  "type": "module",
+  "dependencies": {
+    "@jensen-org/plugin-sdk": "^0.1.0"
+  },
+  "jensen": {
+    "id": "dev.jensen.hello-pane",
+    "category": "example",
+    "minAppVersion": "0.3.0",
+    "permissions": {
+      "workspace": true,
+      "theme": true,
+      "settings": true,
+      "editor": "write",
+      "fs": [
+        "docs"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "jensen-plugin build",
+    "dev": "jensen-plugin dev",
+    "typecheck": "tsc --noEmit"
+  }
+}

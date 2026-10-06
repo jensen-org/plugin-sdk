@@ -1,0 +1,14 @@
+{
+  "name": "Golden Hello",
+  "version": "1.2.0",
+  "description": "Says hello from a pane",
+  "author": { "name": "Ada" },
+  "jensen": {
+    "id": "dev.ada.golden-hello",
+    "category": "demo",
+    "repo": "ada/golden-hello",
+    "tag": "golden-hello-v1.2.0",
+    "minAppVersion": "0.1.0",
+    "permissions": { "workspace": true, "editor": "read", "fs": ["docs"], "network": ["example.com"] }
+  }
+}
