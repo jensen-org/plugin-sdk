@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://jensen.dev/schema/plugin-api.v1.json",
   "title": "jensen-plugin-api",
-  "description": "The wire contract between Jensen and a plugin, apiVersion 1. It is the single source of truth: Jensen's broker and the jensen-plugin-sdk are both generated from it. Every message is {v:1, id, kind, ...} sent over a MessagePort handed to the plugin realm at boot. There is deliberately no method that adds a page or a route: Jensen has exactly three pages and panes are the only open ended surface.",
+  "description": "The wire contract between Jensen and a plugin, apiVersion 1. It is the single source of truth: Jensen's broker and the @jensen-org/plugin-sdk are both generated from it. Every message is {v:1, id, kind, ...} sent over a MessagePort handed to the plugin realm at boot. There is deliberately no method that adds a page or a route: Jensen has exactly three pages and panes are the only open ended surface.",
   "apiVersion": 1,
   "envelope": {
     "request": { "v": 1, "id": "number", "kind": "req", "method": "string", "params": "any" },
