@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jensen.dev/schema/plugin.schema.json",
+  "title": "jensen-plugin-manifest",
+  "description": "The manifest.json of a Jensen plugin, apiVersion 1. Written by `jensen-plugin build` from the `jensen` block of package.json. Mirrors backend::plugins::domain::manifest::Manifest and is enforced by backend::plugins::domain::validate. Panes, commands, hotkeys, settings, menus, status items and themes are registered at runtime from main.js, so there is no contributes block.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "version",
+    "minAppVersion",
+    "apiVersion",
+    "description",
+    "author",
+    "entry"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$",
+      "description": "Reverse-dns identifier, lowercase letters/digits with '.' or '-' separators (e.g. dev.jensen.gcp-scanner)."
+    },
+    "name": { "type": "string", "minLength": 1, "description": "Display name." },
+    "version": {
+      "type": "string",
+      "description": "Semantic version (MAJOR.MINOR.PATCH). Must equal the GitHub release tag."
+    },
+    "minAppVersion": {
+      "type": "string",
+      "description": "Minimum Jensen version required, semver."
+    },
+    "apiVersion": {
+      "const": 1,
+      "description": "The plugin protocol this plugin speaks, see schema/plugin-api.v1.json. A manifest without it was built for the retired plugin system and is refused."
+    },
+    "description": { "type": "string", "description": "One-line explanation of the plugin." },
+    "author": { "type": "string", "minLength": 1, "description": "Author name." },
+    "entry": { "$ref": "#/$defs/entry" },
+    "permissions": { "$ref": "#/$defs/permissions" },
+    "dist": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Added at release time by `jensen publish`. Pins each shipped asset to a sha256 so the manifest checksum transitively pins the whole release. The runtime ignores it.",
+      "properties": {
+        "main": { "$ref": "#/$defs/distAsset" },
+        "readme": { "$ref": "#/$defs/distAsset" },
+        "assets": { "type": "array", "items": { "$ref": "#/$defs/distAsset" } }
+      }
+    }
+  },
+  "$defs": {
+    "distAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset", "sha256"],
+      "properties": {
+        "asset": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["main"],
+      "properties": {
+        "main": {
+          "type": "string",
+          "description": "The single bundle, relative to the plugin directory. It runs headless for logic and again inside a sandboxed frame for custom panes."
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Capabilities the plugin asks for. The effective grant is what is declared and the user approved.",
+      "properties": {
+        "graph": { "type": "boolean", "description": "graph.* methods." },
+        "knowledge": { "type": "boolean", "description": "knowledge.* methods." },
+        "git": { "type": "boolean", "description": "git.* methods." },
+        "workspace": { "type": "boolean", "description": "Open, close, move and observe panes." },
+        "theme": {
+          "type": "boolean",
+          "description": "Switch the active theme and register themes."
+        },
+        "settings": { "type": "boolean", "description": "Read and write Jensen's own settings." },
+        "editor": {
+          "enum": ["none", "read", "write"],
+          "description": "Editor access: read the buffer and selection, or also edit it."
+        },
+        "fs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Project relative directories the plugin may use."
+        },
+        "network": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Hosts the plugin may fetch over https."
+        }
+      }
+    }
+  }
+}

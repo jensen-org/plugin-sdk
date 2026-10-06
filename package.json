@@ -1,0 +1,83 @@
+{
+  "name": "@jensen-org/plugin-sdk",
+  "version": "0.1.0",
+  "description": "Build extensions for Jensen: panes, commands, hotkeys, settings, menus and access to files, the editor, the layout and the theme",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol/index.d.ts",
+      "import": "./dist/protocol/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "jensen-plugin": "./bin/jensen-plugin.mjs"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jensen-org/plugin-sdk.git"
+  },
+  "keywords": [
+    "jensen",
+    "plugin",
+    "sdk",
+    "extension"
+  ],
+  "dependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "scripts": {
+    "protocol:generate": "node scripts/generate-protocol.mjs",
+    "protocol:check": "node scripts/generate-protocol.mjs --check && node scripts/check-protocol.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p examples/hello-pane/tsconfig.json",
+    "lint": "biome check --error-on-warnings .",
+    "format": "biome check --write .",
+    "test": "bun test test",
+    "api:check": "node scripts/api-report.mjs --check",
+    "api:update": "node scripts/api-report.mjs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "check": "bun run protocol:check && bun run lint && bun run build && bun run typecheck && bun run test && bun run api:check",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "bun run build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@changesets/cli": "^2.27.0",
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitepress": "^1.5.0"
+  },
+  "bugs": {
+    "url": "https://github.com/jensen-org/plugin-sdk/issues"
+  },
+  "homepage": "https://github.com/jensen-org/plugin-sdk#readme"
+}
