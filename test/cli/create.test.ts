@@ -61,3 +61,26 @@ describe("jensen-plugin create", () => {
     );
   });
 });
+
+describe("create --backend", () => {
+  test("scaffolds a rust backend, a viewer toolbar and a manifest that validates", () => {
+    const answers = {
+      directory: "x",
+      id: "dev.me.pics",
+      name: "Pics",
+      description: "d",
+      author: "me",
+      sdkVersion: "^0.2.0",
+      backend: true,
+    };
+    const out = files(answers);
+    const pkg = JSON.parse(out["package.json"] ?? "{}");
+
+    expect(Object.keys(out)).toContain("backend/src/lib.rs");
+    expect(out["backend/Cargo.toml"]).toContain("jensen-plugin-backend");
+    expect(out["src/main.ts"]).toContain("registerViewerToolbar");
+    expect(pkg.jensen.backend).toBe("backend.wasm");
+    expect(pkg.jensen.backendBuild).toContain("pics.wasm");
+    expect(validatePackage(pkg)).toEqual([]);
+  });
+});

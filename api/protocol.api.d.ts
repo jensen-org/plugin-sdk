@@ -2,7 +2,7 @@
 export declare const API_VERSION: 1;
 export declare const ERROR_CODES: readonly ["bad_request", "permission_denied", "not_found", "failed", "cancelled", "rate_limited", "too_busy", "killed", "io_budget_exceeded", "unsupported"];
 export type ErrorCode = (typeof ERROR_CODES)[number];
-export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "network";
+export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network";
 export type Handler = {
     "handler": string;
 };
@@ -540,6 +540,13 @@ export interface MethodMap {
         };
         result: null;
     };
+    "editor.retarget": {
+        params: {
+            "from": string;
+            "to": string;
+        };
+        result: null;
+    };
     "editor.replaceRange": {
         params: {
             "from": number;
@@ -591,6 +598,49 @@ export interface MethodMap {
         params: {
             "path": string;
             "contents": string;
+        };
+        result: null;
+    };
+    "fs.readBytes": {
+        params: {
+            "path": string;
+        };
+        result: string;
+    };
+    "fs.writeBytes": {
+        params: {
+            "path": string;
+            "data": string;
+        };
+        result: null;
+    };
+    "backend.call": {
+        params: {
+            "method": string;
+            "input"?: unknown;
+        };
+        result: {
+            "result": unknown;
+            "touched": string[];
+        };
+    };
+    "viewer.registerToolbar": {
+        params: {
+            "id": string;
+            "kinds"?: string[];
+            "extensions"?: string[];
+        };
+        result: null;
+    };
+    "viewer.unregisterToolbar": {
+        params: {
+            "id": string;
+        };
+        result: null;
+    };
+    "viewer.refreshToolbar": {
+        params: {
+            "id": string;
         };
         result: null;
     };
@@ -860,6 +910,15 @@ export interface CallbackMap {
         };
         result: null;
     };
+    "viewer.render": {
+        params: {
+            "toolbarId": string;
+            "path": string;
+        };
+        result: {
+            "children": Node[];
+        };
+    };
     "status.click": {
         params: {
             "id": string;
@@ -901,6 +960,10 @@ export interface EventMap {
         "selection": Range;
         "cursor": Position;
     };
+    "viewer.activeChanged": {
+        "path": string;
+        "kind": string;
+    } | null;
     "editor.saved": {
         "path": string;
     };

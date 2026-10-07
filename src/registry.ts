@@ -3,6 +3,7 @@ import type { CustomPaneView, PaneOptions, PaneView, PaneViewConstructor } from 
 import type { MenuTarget } from "./plugin.ts";
 import { HandlerIds, type HandlerScope } from "./serialize.ts";
 import type { SettingContainer, SettingTab } from "./settings.ts";
+import type { UiNode } from "./ui/index.ts";
 import type { Menu, StatusBarItem } from "./ui.ts";
 
 export interface CommandSpec {
@@ -34,6 +35,11 @@ export interface MenuRegistration {
   build: (menu: Menu, context: Record<string, unknown>) => void | Promise<void>;
 }
 
+export interface ViewerToolbarRegistration {
+  render: (context: { path: string }) => UiNode[] | Promise<UiNode[]>;
+  scope: HandlerScope | null;
+}
+
 /** What a running plugin has registered, so Jensen's callbacks can find it again. Internal to the SDK. */
 export class Registry {
   readonly ids = new HandlerIds();
@@ -45,6 +51,7 @@ export class Registry {
   readonly menus = new Map<string, MenuRegistration>();
   readonly menuCallbacks = new Map<string, Map<string, () => void | Promise<void>>>();
   readonly statusItems = new Map<string, StatusBarItem>();
+  readonly viewerToolbars = new Map<string, ViewerToolbarRegistration>();
   readonly markdown = new Map<string, (source: string) => string | Promise<string>>();
   owner?: Component;
 }

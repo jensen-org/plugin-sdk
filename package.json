@@ -1,6 +1,6 @@
 {
   "name": "@jensen-org/plugin-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Build extensions for Jensen: panes, commands, hotkeys, settings, menus and access to files, the editor, the layout and the theme",
   "license": "MIT",
   "type": "module",
