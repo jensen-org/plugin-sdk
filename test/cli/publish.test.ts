@@ -123,3 +123,47 @@ describe("GitHub steps", () => {
     );
   });
 });
+
+describe("assemble with a backend", () => {
+  test("stages the wasm, pins it in dist.assets and writes entry.backend and tools", () => {
+    const { dir, pkg } = project();
+    try {
+      writeFileSync(join(dir, "backend.wasm"), new Uint8Array([0, 97, 115, 109]));
+      const tool = {
+        name: "resize",
+        description: "Resize an image",
+        inputSchema: { type: "object" },
+      };
+      const block = {
+        ...pkg.jensen,
+        backend: "backend.wasm",
+        tools: [tool],
+        permissions: { ...(pkg.jensen?.permissions as object), backend: true },
+      };
+
+      const result = assemble(dir, { ...pkg, jensen: block });
+      const manifest = JSON.parse(result.manifestJson);
+
+      expect(manifest.entry).toEqual({ main: "main.js", backend: "backend.wasm" });
+      expect(manifest.permissions.backend).toBe(true);
+      expect(manifest.tools).toEqual([tool]);
+      expect(manifest.dist.assets).toEqual([
+        { asset: "backend.wasm", sha256: sha256Hex(new Uint8Array([0, 97, 115, 109])) },
+      ]);
+      expect(result.assets).toContain("backend.wasm");
+      expect(readFileSync(join(dir, "release", "backend.wasm")).length).toBe(4);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("refuses a backend that was never built", () => {
+    const { dir, pkg } = project();
+    try {
+      const block = { ...pkg.jensen, backend: "backend.wasm" };
+      expect(() => assemble(dir, { ...pkg, jensen: block })).toThrow("is not built");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

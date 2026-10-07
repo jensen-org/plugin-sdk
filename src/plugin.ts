@@ -6,7 +6,9 @@ import type { API_VERSION } from "./protocol/index.ts";
 import { type CommandSpec, Registry } from "./registry.ts";
 import type { SettingTab } from "./settings.ts";
 import type { ThemeDocument } from "./theme.ts";
+import type { UiNode } from "./ui/index.ts";
 import { type Menu, StatusBarItem } from "./ui.ts";
+import type { ViewerMatch } from "./viewer.ts";
 
 export type MenuTarget = "explorer" | "editor" | "pane" | "tab";
 
@@ -135,6 +137,26 @@ export abstract class Plugin extends Component {
     return this.track(() => {
       this.registry.menus.delete(id);
       this.app.call("ui.unregisterMenu", { id }).catch(report);
+    });
+  }
+
+  /**
+   * Adds a toolbar to the viewers that show a matching file, such as the image page. `render` returns
+   * `ui` nodes for the file in `context.path`; Jensen calls it again after a handler runs, when the file
+   * changes, and on `app.viewer.refresh(id)`.
+   */
+  registerViewerToolbar(
+    id: string,
+    match: ViewerMatch,
+    render: (context: { path: string }) => UiNode[] | Promise<UiNode[]>,
+  ): Disposable {
+    this.registry.viewerToolbars.set(id, { render, scope: null });
+    this.app
+      .call("viewer.registerToolbar", { id, kinds: match.kinds, extensions: match.extensions })
+      .catch(report);
+    return this.track(() => {
+      this.registry.viewerToolbars.delete(id);
+      this.app.call("viewer.unregisterToolbar", { id }).catch(report);
     });
   }
 

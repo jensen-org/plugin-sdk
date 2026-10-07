@@ -38,6 +38,7 @@
     "editor:read",
     "editor:write",
     "fs",
+    "backend",
     "network"
   ],
   "$defs": {
@@ -1158,6 +1159,18 @@
       },
       "result": { "type": "null" }
     },
+    "editor.retarget": {
+      "summary": "Moves an open tab to another path, for example after a plugin converted the file to a new format.",
+      "capability": "editor:read",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
     "editor.replaceRange": {
       "summary": "Edits the active buffer as one undoable transaction labelled with the plugin id.",
       "capability": "editor:write",
@@ -1253,6 +1266,89 @@
         "required": ["path", "contents"],
         "additionalProperties": false,
         "properties": { "path": { "type": "string" }, "contents": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "fs.readBytes": {
+      "summary": "Reads a file as base64, for binary formats.",
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": { "type": "string" }
+    },
+    "fs.writeBytes": {
+      "summary": "Writes base64 decoded bytes to a file, creating parent directories. Open image tabs on the path refresh.",
+      "capability": "fs",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["path", "data"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "data": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "backend.call": {
+      "summary": "Calls a method of the plugin's WebAssembly backend. The backend reads and writes files inside the plugin's fs grant; touched lists the paths it wrote.",
+      "capability": "backend",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["method"],
+        "additionalProperties": false,
+        "properties": { "method": { "type": "string" }, "input": {} }
+      },
+      "result": {
+        "type": "object",
+        "required": ["result", "touched"],
+        "additionalProperties": false,
+        "properties": {
+          "result": {},
+          "touched": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "viewer.registerToolbar": {
+      "summary": "Contributes a toolbar to file viewers, such as the image page, for files matching kinds or extensions. Jensen asks for its nodes with viewer.render.",
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "kinds": { "type": "array", "items": { "type": "string" } },
+          "extensions": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "result": { "type": "null" }
+    },
+    "viewer.unregisterToolbar": {
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": { "type": "null" }
+    },
+    "viewer.refreshToolbar": {
+      "summary": "Asks Jensen to call viewer.render again.",
+      "capability": "workspace",
+      "handler": "frontend",
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
       },
       "result": { "type": "null" }
     },
@@ -1711,6 +1807,21 @@
       },
       "result": { "type": "null" }
     },
+    "viewer.render": {
+      "summary": "Asks a viewer toolbar for its node tree for the file being shown.",
+      "params": {
+        "type": "object",
+        "required": ["toolbarId", "path"],
+        "additionalProperties": false,
+        "properties": { "toolbarId": { "type": "string" }, "path": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["children"],
+        "additionalProperties": false,
+        "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } }
+      }
+    },
     "status.click": {
       "params": {
         "type": "object",
@@ -1794,6 +1905,20 @@
           "selection": { "$ref": "#/$defs/Range" },
           "cursor": { "$ref": "#/$defs/Position" }
         }
+      }
+    },
+    "viewer.activeChanged": {
+      "capability": "workspace",
+      "payload": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["path", "kind"],
+            "additionalProperties": false,
+            "properties": { "path": { "type": "string" }, "kind": { "type": "string" } }
+          },
+          { "type": "null" }
+        ]
       }
     },
     "editor.saved": {

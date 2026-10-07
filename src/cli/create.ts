@@ -9,9 +9,10 @@ export interface Answers {
   description: string;
   author: string;
   sdkVersion: string;
+  backend?: boolean;
 }
 
-const SDK_VERSION = "^0.1.0";
+const SDK_VERSION = "^0.2.0";
 
 export function slug(text: string): string {
   const out = text
@@ -23,6 +24,7 @@ export function slug(text: string): string {
 }
 
 export function files(answers: Answers): Record<string, string> {
+  if (answers.backend) return backendFiles(answers);
   const pkg = {
     name: slug(answers.name),
     version: "0.1.0",
@@ -65,6 +67,109 @@ export function files(answers: Answers): Record<string, string> {
     "README.md": readme(answers),
     "src/main.ts": mainSource(answers),
   };
+}
+
+function backendFiles(answers: Answers): Record<string, string> {
+  const crate = slug(answers.name);
+  const base = files({ ...answers, backend: false });
+  const pkg = JSON.parse(base["package.json"] ?? "{}") as Record<string, unknown>;
+  pkg.scripts = {
+    build: "jensen-plugin build",
+    dev: "jensen-plugin dev",
+    validate: "jensen-plugin validate",
+    typecheck: "tsc --noEmit",
+    "test:backend": "cargo test --manifest-path backend/Cargo.toml",
+  };
+  pkg.jensen = {
+    id: answers.id,
+    minAppVersion: "0.3.0",
+    backend: "backend.wasm",
+    backendBuild: `cargo build --release --target wasm32-unknown-unknown --manifest-path backend/Cargo.toml && cp backend/target/wasm32-unknown-unknown/release/${crate.replace(/-/g, "_")}.wasm backend.wasm`,
+    permissions: { workspace: true, backend: true, fs: ["*.png"] },
+    tools: [
+      {
+        name: "greet",
+        description: "Say hello to a name, as an example of a tool an agent can call",
+        inputSchema: {
+          type: "object",
+          properties: { name: { type: "string" } },
+          required: ["name"],
+        },
+      },
+    ],
+  };
+  return {
+    ...base,
+    "package.json": `${JSON.stringify(pkg, null, 2)}\n`,
+    ".gitignore": "node_modules\nmain.js\nrelease\nbackend.wasm\nbackend/target\n",
+    "src/main.ts": backendMain(answers),
+    "backend/Cargo.toml": `[package]
+name = ${JSON.stringify(crate)}
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.2.0" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+`,
+    "backend/src/lib.rs": `use jensen_plugin_backend::{Backend, Value, json};
+
+fn greet(input: Value) -> Result<Value, String> {
+    let name = input["name"].as_str().ok_or("name is required")?;
+    Ok(json!({ "greeting": format!("Hello, {name}") }))
+}
+
+fn register(backend: &mut Backend) {
+    backend.method("greet", greet);
+}
+
+jensen_plugin_backend::export!(register);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn greets_by_name() {
+        let reply = greet(json!({ "name": "Ada" })).unwrap();
+        assert_eq!(reply["greeting"], "Hello, Ada");
+    }
+}
+`,
+  };
+}
+
+function backendMain(answers: Answers): string {
+  const name = pascal(answers.name);
+  return `import { Notice, Plugin } from "@jensen-org/plugin-sdk";
+import * as ui from "@jensen-org/plugin-sdk/ui";
+
+export default class ${name} extends Plugin {
+  onload() {
+    this.registerViewerToolbar("greet", { kinds: ["image"] }, ({ path }) => [
+      ui.Row([
+        ui.Text(path, "muted"),
+        ui.Button({
+          label: "Greet",
+          onClick: async () => {
+            const { greeting } = await this.app.backend.call<{ greeting: string }>("greet", {
+              name: path,
+            });
+            new Notice(greeting);
+          },
+        }),
+      ]),
+    ]);
+  }
+}
+`;
 }
 
 function mainSource(answers: Answers): string {
@@ -218,6 +323,7 @@ export async function create(argv: string[]): Promise<number> {
       (await ask("One line description?", `${name}, a Jensen plugin`, yes)),
     author: flag(argv, "author") ?? (await ask("Author?", "me", yes)),
     sdkVersion: SDK_VERSION,
+    backend: argv.includes("--backend"),
   };
   const written = write(root, files(answers));
   process.stdout.write(
