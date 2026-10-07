@@ -1,4 +1,5 @@
 export { App, type Hello } from "./app.ts";
+export { Backend, type BackendResult } from "./backend.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
@@ -53,4 +54,5 @@ export {
   StatusBarItem,
   SuggestModal,
 } from "./ui.ts";
+export { Viewer, type ViewerFile, type ViewerMatch } from "./viewer.ts";
 export { type LayoutChange, type OpenPaneOptions, PaneLeaf, Workspace } from "./workspace.ts";

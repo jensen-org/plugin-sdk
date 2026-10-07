@@ -16,6 +16,7 @@ export declare class AppSettings extends Events<{
 
 // app.d.ts
 import { AppSettings } from "./app-settings.ts";
+import { Backend } from "./backend.ts";
 import { Commands, Keymap } from "./commands.ts";
 import type { HostConnection } from "./connection.ts";
 import { Editor } from "./editor.ts";
@@ -23,11 +24,13 @@ import { Files } from "./files.ts";
 import type { MethodMap, MethodName } from "./protocol/index.ts";
 import { Git, Graph, Knowledge, Net } from "./services.ts";
 import { Theme } from "./theme.ts";
+import { Viewer } from "./viewer.ts";
 import { Workspace } from "./workspace.ts";
 export type Hello = MethodMap["plugin.hello"]["result"];
 /**
  * The object graph a plugin works through: the workspace, the editor, the project's files, the theme,
- * commands and settings, plus the code graph, knowledge base, git and network when the manifest asks.
+ * commands and settings, the file viewers and the plugin's own backend, plus the code graph, knowledge
+ * base, git and network when the manifest asks.
  */
 export declare class App {
     readonly connection: HostConnection;
@@ -43,6 +46,8 @@ export declare class App {
     readonly knowledge: Knowledge;
     readonly git: Git;
     readonly net: Net;
+    readonly backend: Backend;
+    readonly viewer: Viewer;
     constructor(connection: HostConnection, hello: Hello);
     get pluginId(): string;
     /** The version of Jensen this plugin is running in. */
@@ -56,6 +61,31 @@ export declare class App {
     call<K extends MethodName>(method: K, params: MethodMap[K]["params"]): Promise<MethodMap[K]["result"]>;
 }
 
+// backend.d.ts
+import type { HostConnection } from "./connection.ts";
+export interface BackendResult<T> {
+    result: T;
+    /** The project paths the backend wrote or deleted during the call. */
+    touched: string[];
+}
+/**
+ * The plugin's own WebAssembly program, the one `entry.backend` names in the manifest. It needs
+ * `backend: true` under permissions and reaches only the files the `fs` scopes allow. Jensen refreshes
+ * any open tab on a path the backend touched, so an image viewer shows the new pixels at once.
+ */
+export declare class Backend {
+    private readonly host;
+    constructor(host: HostConnection);
+    /** Calls one backend method and returns what it answered. */
+    call<T = unknown>(method: string, input?: unknown): Promise<T>;
+    /** Like `call`, and also reports the paths the backend touched. */
+    run<T = unknown>(method: string, input?: unknown): Promise<BackendResult<T>>;
+}
+
+// base64.d.ts
+export declare function toBase64(bytes: Uint8Array): string;
+export declare function fromBase64(text: string): Uint8Array;
+
 // cli/build.d.ts
 import { type PackageJson, type Problem } from "./validate.ts";
 export interface BuildOptions {
@@ -67,6 +97,7 @@ export declare function entryFor(cwd: string, pkg: PackageJson): string;
 /** The module esbuild bundles: the plugin's class, handed to the SDK to run. */
 export declare function wrapper(entry: string): string;
 export declare function checkProject(cwd: string): Problem[];
+export declare function buildBackend(cwd: string, pkg: PackageJson): void;
 export declare function buildOnce(options: BuildOptions): Promise<void>;
 export declare function watch(options: BuildOptions, onRebuild: () => void): Promise<() => Promise<void>>;
 
@@ -78,6 +109,7 @@ export interface Answers {
     description: string;
     author: string;
     sdkVersion: string;
+    backend?: boolean;
 }
 export declare function slug(text: string): string;
 export declare function files(answers: Answers): Record<string, string>;
@@ -314,6 +346,8 @@ export declare class Editor extends Events<{
         line?: number;
         column?: number;
     }): Promise<null>;
+    /** Moves an open tab to another path, for example after the plugin converted the file. */
+    retarget(from: string, to: string): Promise<null>;
     replaceRange(from: number, to: number, text: string): Promise<null>;
     replaceSelection(text: string): Promise<null>;
     insert(text: string, at?: number): Promise<null>;
@@ -368,8 +402,9 @@ export interface FileChange {
     from?: string;
 }
 /**
- * The project's files. Every path is relative to the project root and has to sit inside a directory
- * listed under `fs` in the manifest, which Jensen enforces below the plugin and not in it.
+ * The project's files. Every path is relative to the project root and has to fall inside a scope
+ * listed under `fs` in the manifest: a folder such as "docs", a file type such as "*.png", or "." for
+ * every file. Jensen enforces the scopes below the plugin and not in it, after the user consents.
  */
 export declare class Files extends Events<{
     create: [FileChange];
@@ -381,6 +416,10 @@ export declare class Files extends Events<{
     constructor(host: HostConnection);
     read(path: string): Promise<string>;
     write(path: string, contents: string): Promise<null>;
+    /** Reads a file of any format, such as an image. */
+    readBytes(path: string): Promise<Uint8Array>;
+    /** Writes bytes to a file, creating parent folders. Open tabs on the path refresh. */
+    writeBytes(path: string, data: Uint8Array): Promise<null>;
     list(path: string): Promise<Array<FileEntry | FolderEntry>>;
     stat(path: string): Promise<FileStat | null>;
     exists(path: string): Promise<boolean>;
@@ -394,6 +433,7 @@ export declare class Files extends Events<{
 
 // index.d.ts
 export { App, type Hello } from "./app.ts";
+export { Backend, type BackendResult } from "./backend.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
@@ -415,6 +455,7 @@ export { Theme, type ThemeDocument } from "./theme.ts";
 export type { UiNode } from "./ui/index.ts";
 export * as ui from "./ui/index.ts";
 export { ChoiceModal, ConfirmModal, Menu, MenuItem, Notice, type NoticeOptions, PromptModal, StatusBarItem, SuggestModal, } from "./ui.ts";
+export { Viewer, type ViewerFile, type ViewerMatch } from "./viewer.ts";
 export { type LayoutChange, type OpenPaneOptions, PaneLeaf, Workspace } from "./workspace.ts";
 
 // pane.d.ts
@@ -480,7 +521,9 @@ import type { API_VERSION } from "./protocol/index.ts";
 import { type CommandSpec, Registry } from "./registry.ts";
 import type { SettingTab } from "./settings.ts";
 import type { ThemeDocument } from "./theme.ts";
+import type { UiNode } from "./ui/index.ts";
 import { type Menu, StatusBarItem } from "./ui.ts";
+import type { ViewerMatch } from "./viewer.ts";
 export type MenuTarget = "explorer" | "editor" | "pane" | "tab";
 export interface MenuContexts {
     explorer: {
@@ -528,6 +571,14 @@ export declare abstract class Plugin extends Component {
     addSettingTab(tab: SettingTab): Disposable;
     addStatusBarItem(id?: string): StatusBarItem;
     registerMenu<T extends MenuTarget>(target: T, build: (menu: Menu, context: MenuContexts[T]) => void | Promise<void>, id?: string): Disposable;
+    /**
+     * Adds a toolbar to the viewers that show a matching file, such as the image page. `render` returns
+     * `ui` nodes for the file in `context.path`; Jensen calls it again after a handler runs, when the file
+     * changes, and on `app.viewer.refresh(id)`.
+     */
+    registerViewerToolbar(id: string, match: ViewerMatch, render: (context: {
+        path: string;
+    }) => UiNode[] | Promise<UiNode[]>): Disposable;
     registerMarkdownRenderer(language: string, render: (source: string) => string | Promise<string>): Disposable;
     registerTheme(document: ThemeDocument): Disposable;
     private track;
@@ -541,6 +592,7 @@ import type { CustomPaneView, PaneOptions, PaneView, PaneViewConstructor } from 
 import type { MenuTarget } from "./plugin.ts";
 import { HandlerIds, type HandlerScope } from "./serialize.ts";
 import type { SettingContainer, SettingTab } from "./settings.ts";
+import type { UiNode } from "./ui/index.ts";
 import type { Menu, StatusBarItem } from "./ui.ts";
 export interface CommandSpec {
     id: string;
@@ -570,6 +622,12 @@ export interface MenuRegistration {
     target: MenuTarget;
     build: (menu: Menu, context: Record<string, unknown>) => void | Promise<void>;
 }
+export interface ViewerToolbarRegistration {
+    render: (context: {
+        path: string;
+    }) => UiNode[] | Promise<UiNode[]>;
+    scope: HandlerScope | null;
+}
 /** What a running plugin has registered, so Jensen's callbacks can find it again. Internal to the SDK. */
 export declare class Registry {
     readonly ids: HandlerIds;
@@ -581,6 +639,7 @@ export declare class Registry {
     readonly menus: Map<string, MenuRegistration>;
     readonly menuCallbacks: Map<string, Map<string, () => void | Promise<void>>>;
     readonly statusItems: Map<string, StatusBarItem>;
+    readonly viewerToolbars: Map<string, ViewerToolbarRegistration>;
     readonly markdown: Map<string, (source: string) => string | Promise<string>>;
     owner?: Component;
 }
@@ -899,6 +958,34 @@ export declare class StatusBarItem {
     click(): void | Promise<void>;
     remove(): Promise<void>;
     private push;
+}
+
+// viewer.d.ts
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+export interface ViewerFile {
+    /** The path of the file being shown, relative to the project root. */
+    path: string;
+    /** The kind of viewer showing it, such as "image". */
+    kind: string;
+}
+export interface ViewerMatch {
+    /** Viewer kinds to add the toolbar to, such as "image". */
+    kinds?: string[];
+    /** File extensions to add the toolbar to, without the dot. */
+    extensions?: string[];
+}
+/** The file viewers Jensen draws, such as the image page, and which file each is showing. */
+export declare class Viewer extends Events<{
+    change: [ViewerFile | null];
+}> {
+    private readonly host;
+    private current;
+    constructor(host: HostConnection);
+    /** The file the focused viewer is showing, or null when none is. */
+    get active(): ViewerFile | null;
+    /** Asks Jensen to draw a toolbar again, after the plugin's own state changed. */
+    refresh(toolbarId: string): Promise<null>;
 }
 
 // workspace.d.ts

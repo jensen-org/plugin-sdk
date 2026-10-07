@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { buildOnce, checkProject, readPackage } from "./build.ts";
 import type { PackageJson, Problem } from "./validate.ts";
 
@@ -103,6 +103,7 @@ function permissionsOf(block: Record<string, unknown>) {
     workspace: given.workspace === true,
     theme: given.theme === true,
     settings: given.settings === true,
+    backend: given.backend === true,
     editor: typeof given.editor === "string" ? given.editor : "none",
     fs: Array.isArray(given.fs) ? given.fs : [],
     network: Array.isArray(given.network) ? given.network : [],
@@ -126,17 +127,27 @@ export function assemble(cwd: string, pkg: PackageJson): Published {
     );
   }
 
+  const backend = optionalString(block.backend);
+  const backendSrc = backend === undefined ? undefined : resolve(cwd, backend);
+  if (backendSrc !== undefined && !existsSync(backendSrc)) {
+    throw new Error(
+      `jensen.backend ${backend} is not built: set "jensen.backendBuild" and run jensen-plugin build`,
+    );
+  }
+  const tools = Array.isArray(block.tools) ? block.tools : [];
+
   const id = optionalString(block.id) ?? `plugin.${slug(pkg.name ?? "")}`;
   const manifest = {
     id,
-    name: pkg.name ?? "",
+    name: optionalString(block.displayName) ?? pkg.name ?? "",
     version: pkg.version ?? "",
     minAppVersion: optionalString(block.minAppVersion) ?? "",
     apiVersion: API_VERSION,
     description: pkg.description ?? "",
     author: authorName(pkg.author),
-    entry: { main: MAIN_ASSET },
+    entry: backend === undefined ? { main: MAIN_ASSET } : { main: MAIN_ASSET, backend },
     permissions: permissionsOf(block),
+    ...(tools.length > 0 ? { tools } : {}),
   };
 
   const releaseDir = resolve(cwd, RELEASE_DIR);
@@ -144,13 +155,25 @@ export function assemble(cwd: string, pkg: PackageJson): Published {
   mkdirSync(releaseDir, { recursive: true });
   copyFileSync(mainSrc, join(releaseDir, MAIN_ASSET));
   copyFileSync(readmeSrc, join(releaseDir, README_ASSET));
+  if (backend !== undefined && backendSrc !== undefined) {
+    const staged = join(releaseDir, backend);
+    mkdirSync(dirname(staged), { recursive: true });
+    copyFileSync(backendSrc, staged);
+  }
 
   const pin = (name: string) => ({
     asset: name,
     sha256: sha256Hex(readFileSync(join(releaseDir, name))),
   });
   const manifestJson = JSON.stringify(
-    { ...manifest, dist: { main: pin(MAIN_ASSET), readme: pin(README_ASSET) } },
+    {
+      ...manifest,
+      dist: {
+        main: pin(MAIN_ASSET),
+        readme: pin(README_ASSET),
+        ...(backend === undefined ? {} : { assets: [pin(backend)] }),
+      },
+    },
     null,
     2,
   );
@@ -173,7 +196,7 @@ export function assemble(cwd: string, pkg: PackageJson): Published {
     manifestJson,
     entry,
     releaseDir,
-    assets: [MANIFEST_ASSET, MAIN_ASSET, README_ASSET],
+    assets: [MANIFEST_ASSET, MAIN_ASSET, README_ASSET, ...(backend === undefined ? [] : [backend])],
   };
 }
 

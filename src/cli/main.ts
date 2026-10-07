@@ -6,7 +6,7 @@ import { skill } from "./skill.ts";
 
 const USAGE = `jensen-plugin <command>
 
-  create     scaffold a new plugin in a directory
+  create     scaffold a new plugin in a directory (add --backend for a Rust backend and a viewer toolbar)
   build      bundle src/main.ts into main.js and check the package.json "jensen" block
   dev        rebuild main.js on every change (add --publish to assemble release/ after each build)
   validate   check the package.json "jensen" block and the README without building

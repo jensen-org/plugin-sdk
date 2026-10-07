@@ -11,7 +11,10 @@ const BOOLEAN_PERMISSIONS = [
   "workspace",
   "theme",
   "settings",
+  "backend",
 ] as const;
+const TOOL_NAME = /^[a-z][a-z0-9_]*$/;
+const MAX_TOOLS = 32;
 const KNOWN_PERMISSIONS = new Set<string>([...BOOLEAN_PERMISSIONS, "editor", "fs", "network"]);
 const RETIRED_KEYS: Record<string, string> = {
   contributes:
@@ -20,6 +23,9 @@ const RETIRED_KEYS: Record<string, string> = {
 };
 
 function isRelativeScope(scope: string): boolean {
+  if (scope === "*" || scope === ".") return true;
+  if (scope.startsWith("*.")) return /^[A-Za-z0-9_-]+$/.test(scope.slice(2));
+  if (/[*?[]/.test(scope)) return false;
   if (!scope || scope.startsWith("/") || scope.includes("\\")) return false;
   const parts = scope.split("/");
   return parts.every((part) => part !== "" && part !== "." && part !== "..");
@@ -96,12 +102,70 @@ export function validatePackage(pkg: PackageJson): Problem[] {
           if (typeof scope === "string" && !isRelativeScope(scope)) {
             add(
               "jensen.permissions.fs",
-              `'${scope}' must be a relative directory inside the project`,
+              `'${scope}' must be a folder inside the project, a file type such as "*.png", or "." for every file`,
             );
           }
         }
       }
     }
   }
+  checkBackend(block, add);
   return problems;
+}
+
+function checkBackend(
+  block: Record<string, unknown>,
+  add: (field: string, message: string) => void,
+): void {
+  const backend = block.backend;
+  const permissions = (block.permissions ?? {}) as Record<string, unknown>;
+  if (backend !== undefined) {
+    const parts = typeof backend === "string" ? backend.split("/") : [];
+    const safe =
+      typeof backend === "string" &&
+      backend.endsWith(".wasm") &&
+      !backend.startsWith("/") &&
+      !backend.includes("\\") &&
+      parts.every((part) => part !== "" && part !== "." && part !== "..");
+    if (!safe) {
+      add("jensen.backend", "must be a relative path to a built .wasm file inside the plugin");
+    }
+    if (permissions.backend !== true) {
+      add("jensen.permissions.backend", "must be true when jensen.backend is set");
+    }
+  } else if (permissions.backend === true) {
+    add("jensen.backend", "is required when the backend permission is set");
+  }
+  if (block.backendBuild !== undefined && typeof block.backendBuild !== "string") {
+    add("jensen.backendBuild", "must be a shell command that writes jensen.backend");
+  }
+  const tools = block.tools;
+  if (tools === undefined) return;
+  if (!Array.isArray(tools)) {
+    add("jensen.tools", "must be a list");
+    return;
+  }
+  if (backend === undefined && tools.length > 0) {
+    add("jensen.tools", "need jensen.backend, which serves them");
+  }
+  if (tools.length > MAX_TOOLS) add("jensen.tools", `may declare at most ${MAX_TOOLS} tools`);
+  const seen = new Set<string>();
+  tools.forEach((tool, index) => {
+    const field = `jensen.tools[${index}]`;
+    const item = tool as Record<string, unknown> | null;
+    const name = item?.name;
+    if (typeof name !== "string" || !TOOL_NAME.test(name)) {
+      add(`${field}.name`, "must be lowercase letters, digits and '_', starting with a letter");
+    } else if (seen.has(name)) {
+      add(`${field}.name`, `'${name}' is declared twice`);
+    } else {
+      seen.add(name);
+    }
+    if (typeof item?.description !== "string" || item.description === "") {
+      add(`${field}.description`, "is required: agents read it to decide when to call the tool");
+    }
+    if (typeof item?.inputSchema !== "object" || item.inputSchema === null) {
+      add(`${field}.inputSchema`, "must be a JSON schema object");
+    }
+  });
 }
