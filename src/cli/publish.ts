@@ -139,7 +139,7 @@ export function assemble(cwd: string, pkg: PackageJson): Published {
   const id = optionalString(block.id) ?? `plugin.${slug(pkg.name ?? "")}`;
   const manifest = {
     id,
-    name: pkg.name ?? "",
+    name: optionalString(block.displayName) ?? pkg.name ?? "",
     version: pkg.version ?? "",
     minAppVersion: optionalString(block.minAppVersion) ?? "",
     apiVersion: API_VERSION,

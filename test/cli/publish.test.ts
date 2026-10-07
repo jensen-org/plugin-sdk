@@ -167,3 +167,17 @@ describe("assemble with a backend", () => {
     }
   });
 });
+
+describe("assemble with a display name", () => {
+  test("uses jensen.displayName for the manifest and entry name", () => {
+    const { dir, pkg } = project();
+    try {
+      const block = { ...pkg.jensen, displayName: "Pretty Name" };
+      const result = assemble(dir, { ...pkg, jensen: block });
+      expect(JSON.parse(result.manifestJson).name).toBe("Pretty Name");
+      expect(result.entry.name).toBe("Pretty Name");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
