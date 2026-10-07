@@ -1314,8 +1314,8 @@
       }
     },
     "viewer.registerToolbar": {
-      "summary": "Contributes a toolbar to file viewers, such as the image page, for files matching kinds or extensions. Jensen asks for its nodes with viewer.render.",
-      "capability": "workspace",
+      "summary": "Contributes a toolbar to file viewers, such as the image page, for files matching kinds or extensions. Jensen asks for its nodes with viewer.render and passes the path of the file shown, so it needs the same editor read access as editor.activeChanged.",
+      "capability": "editor:read",
       "handler": "frontend",
       "params": {
         "type": "object",
@@ -1330,7 +1330,7 @@
       "result": { "type": "null" }
     },
     "viewer.unregisterToolbar": {
-      "capability": "workspace",
+      "capability": "editor:read",
       "handler": "frontend",
       "params": {
         "type": "object",
@@ -1342,7 +1342,7 @@
     },
     "viewer.refreshToolbar": {
       "summary": "Asks Jensen to call viewer.render again.",
-      "capability": "workspace",
+      "capability": "editor:read",
       "handler": "frontend",
       "params": {
         "type": "object",
@@ -1908,7 +1908,7 @@
       }
     },
     "viewer.activeChanged": {
-      "capability": "workspace",
+      "capability": "editor:read",
       "payload": {
         "oneOf": [
           {

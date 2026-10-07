@@ -5,8 +5,8 @@ and enforces the grant on every call.
 
 | Key | Gives |
 |---|---|
-| `workspace` | register, open, move and close panes; add toolbars to file viewers; run any command |
-| `editor` | `"read"`: buffer, selection, decorations. `"write"`: also edit and save |
+| `workspace` | register, open, move and close panes; run any command |
+| `editor` | `"read"`: buffer, selection, decorations, which file a viewer shows, viewer toolbars. `"write"`: also edit and save |
 | `fs` | list of scopes readable and writable: a folder (`"docs"`), a file type (`"*.png"`), or `"."` and `"*"` for every file |
 | `backend` | run the plugin's own WebAssembly backend, and offer its tools to AI agents |
 | `theme` | switch the active theme, register themes |

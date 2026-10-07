@@ -20,7 +20,8 @@ export default class Pics extends Plugin {
 [`ui` nodes](/guide/panes) for the file, with the path relative to the project root.
 
 Jensen calls `render` again when a handler runs, when the file changes on disk, and on
-`this.app.viewer.refresh("tools")`. The permission it needs is `workspace`.
+`this.app.viewer.refresh("tools")`. A toolbar learns the path of every file it is shown for, so it needs
+`editor: "read"`, the same access that lets a plugin see the active editor.
 
 ## Changing the file
 
