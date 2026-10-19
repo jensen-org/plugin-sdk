@@ -350,25 +350,41 @@ export declare function toDisposable(cleanup: () => void): Disposable;
 
 // editor.d.ts
 import type { HostConnection } from "./connection.ts";
+import { type Disposable } from "./disposable.ts";
 import { Events } from "./events.ts";
-import type { ActiveEditor, Decoration, Position, Range, Tone } from "./protocol/index.ts";
+import type { ActiveEditor, Decoration, DecorationAction, Position, Range, Tone } from "./protocol/index.ts";
 export interface EditorSelection {
     text: string;
     from: Position;
     to: Position;
 }
-/** Decorations Jensen draws on top of the code editor. They are visual only and never change the buffer. */
+export interface DecorationActionEvent {
+    key: string;
+    path: string;
+    actionId: string;
+}
+/**
+ * Decorations Jensen draws on top of the code editor. They are visual only and never change the buffer.
+ * Give one an `action` and Jensen offers it on the decoration, then reports a choice to
+ * `editor.onDecorationAction`.
+ */
 export declare const Decorations: {
     mark: (from: number, to: number, options?: {
         tone?: Tone;
         tooltip?: string;
+        action?: DecorationAction;
     }) => Decoration;
-    line: (line: number, tone?: Tone) => Decoration;
+    line: (line: number, tone?: Tone, options?: {
+        action?: DecorationAction;
+    }) => Decoration;
     gutter: (line: number, text: string, options?: {
         tone?: Tone;
         tooltip?: string;
+        action?: DecorationAction;
     }) => Decoration;
-    hint: (at: number, text: string, tone?: Tone) => Decoration;
+    hint: (at: number, text: string, tone?: Tone, options?: {
+        action?: DecorationAction;
+    }) => Decoration;
 };
 /**
  * The code editor. Reading needs `editor: "read"` in the manifest, changing the buffer needs `"write"`.
@@ -388,6 +404,7 @@ export declare class Editor extends Events<{
     save: [{
         path: string;
     }];
+    "decoration-action": [DecorationActionEvent];
 }> {
     private readonly host;
     constructor(host: HostConnection);
@@ -405,6 +422,11 @@ export declare class Editor extends Events<{
     insert(text: string, at?: number): Promise<null>;
     save(path?: string): Promise<null>;
     decorate(key: string, path: string, decorations: Decoration[]): Promise<null>;
+    /** Hears the action a person chose on one of the decorations set under `key`. */
+    onDecorationAction(key: string, callback: (event: {
+        path: string;
+        actionId: string;
+    }) => void): Disposable;
     clearDecorations(key: string): Promise<null>;
 }
 
@@ -494,7 +516,7 @@ export type { Confirmation } from "./confirmed.ts";
 export { HostConnection } from "./connection.ts";
 export { type ContainerEvent, Containers, type LogOptions, type LogPage, type RemoveResult, } from "./containers.ts";
 export { type Disposable, DisposableStore, toDisposable } from "./disposable.ts";
-export { Decorations, Editor, type EditorSelection } from "./editor.ts";
+export { type DecorationActionEvent, Decorations, Editor, type EditorSelection, } from "./editor.ts";
 export { HostError, NotInJensenError } from "./errors.ts";
 export { type EventRef, Events } from "./events.ts";
 export { type FileChange, FileEntry, FileSystemEntry, Files, FolderEntry } from "./files.ts";
@@ -504,7 +526,7 @@ export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
 export { Run, type RunTarget } from "./run.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
-export { Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
+export { type SessionChip, Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
 export { ButtonComponent, ColorComponent, DropdownComponent, NumberComponent, Setting, SettingContainer, SettingTab, SliderComponent, TextAreaComponent, TextComponent, ToggleComponent, } from "./settings.ts";
 export { type StartOptions, start } from "./start.ts";
 export { TestHost, type TestHostOptions } from "./testing.ts";
@@ -513,7 +535,7 @@ export type { UiNode } from "./ui/index.ts";
 export * as ui from "./ui/index.ts";
 export { ChoiceModal, ConfirmModal, Menu, MenuItem, Notice, type NoticeOptions, PromptModal, StatusBarItem, SuggestModal, } from "./ui.ts";
 export { Viewer, type ViewerFile, type ViewerMatch } from "./viewer.ts";
-export { type LayoutChange, type OpenPaneOptions, PaneLeaf, Workspace } from "./workspace.ts";
+export { type LayoutChange, type OpenPaneOptions, type PaneBadge, PaneLeaf, Workspace, } from "./workspace.ts";
 
 // pane.d.ts
 import type { App } from "./app.ts";
@@ -790,10 +812,12 @@ export declare class Net {
 export {};
 
 // sessions.d.ts
+import { type Confirmation } from "./confirmed.ts";
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
-import type { EventMap, Session, Worktree } from "./protocol/index.ts";
+import type { EventMap, MethodMap, Session, Worktree } from "./protocol/index.ts";
 export type WorktreeRemoval = EventMap["worktrees.removed"];
+export type SessionChip = Omit<MethodMap["sessions.setChip"]["params"], "sessionId">;
 /** The project's sessions, one per agent working in its own worktree. Needs `sessions` in the manifest. */
 export declare class Sessions extends Events<{
     change: [Session];
@@ -802,6 +826,13 @@ export declare class Sessions extends Events<{
     private readonly host;
     constructor(host: HostConnection);
     list(): Promise<Session[]>;
+    /** Puts a short chip on the session's card, replacing the one this plugin put there before. */
+    setChip(sessionId: string, chip: SessionChip): Promise<void>;
+    clearChip(sessionId: string): Promise<void>;
+    /** Focuses the session's pane. */
+    open(sessionId: string): Promise<void>;
+    /** Offers text to a session. Jensen shows it and asks the person before it is delivered. */
+    sendContext(sessionId: string, text: string): Promise<Confirmation>;
 }
 /** The project's git worktrees and the session that owns each. Needs `sessions` in the manifest. */
 export declare class Worktrees extends Events<{
@@ -971,14 +1002,25 @@ export declare class Theme extends Events<{
 // ui.d.ts
 import type { App } from "./app.ts";
 import type { HostConnection } from "./connection.ts";
-import type { Severity, Tone } from "./protocol/index.ts";
+import { type Disposable } from "./disposable.ts";
+import type { NoticeAction, Severity, Tone } from "./protocol/index.ts";
 export interface NoticeOptions {
     severity?: Severity;
     timeoutMs?: number;
+    /** Buttons on the toast. Listen for the one pressed with `notice.onAction`. */
+    actions?: NoticeAction[];
 }
-/** A toast. `new Notice("Saved")` works anywhere inside a running plugin. */
+type ActionListener = (actionId: string) => void;
+/** Hands a pressed toast button to the notice that showed it. Called by the SDK when Jensen reports one. */
+export declare function deliverNoticeAction(app: App, noticeId: string, actionId: string): void;
+/**
+ * A toast. `new Notice("Saved")` works anywhere inside a running plugin. With `actions` it shows buttons,
+ * and `onAction` hears which one was pressed, which needs a Jensen that supports them.
+ */
 export declare class Notice {
+    private readonly listeners;
     constructor(message: string, options?: NoticeOptions);
+    onAction(callback: ActionListener): Disposable;
 }
 export declare class ConfirmModal {
     private readonly app;
@@ -1068,6 +1110,7 @@ export declare class StatusBarItem {
     remove(): Promise<void>;
     private push;
 }
+export {};
 
 // viewer.d.ts
 import type { HostConnection } from "./connection.ts";
@@ -1100,7 +1143,8 @@ export declare class Viewer extends Events<{
 // workspace.d.ts
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
-import type { Direction, PaneInfo } from "./protocol/index.ts";
+import type { Direction, MethodMap, PaneInfo } from "./protocol/index.ts";
+export type PaneBadge = Omit<MethodMap["workspace.setPaneBadge"]["params"], "paneId">;
 export declare class PaneLeaf {
     private readonly host;
     readonly info: PaneInfo;
@@ -1141,6 +1185,8 @@ export declare class Workspace extends Events<{
     constructor(host: HostConnection);
     currentPage(): Promise<"session" | "code" | "notes">;
     listPanes(): Promise<PaneLeaf[]>;
+    /** Puts a badge on the tab of the pane registered as `paneId`. Pass no count and no text to clear it. */
+    setBadge(paneId: string, badge?: PaneBadge): Promise<void>;
     getLeavesOfType(paneId: string): Promise<PaneLeaf[]>;
     openPane(paneId: string, options?: OpenPaneOptions): Promise<PaneLeaf>;
 }

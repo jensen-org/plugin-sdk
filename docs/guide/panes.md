@@ -50,3 +50,6 @@ await leaf.focus();
 ```
 
 `workspace` permission is required to register and open panes.
+
+`this.app.workspace.setBadge("tasks", { count: 3, tone: "danger" })` puts a badge on the tab of the pane
+registered as `tasks`, and `setBadge("tasks")` clears it. It needs a Jensen that supports badges.

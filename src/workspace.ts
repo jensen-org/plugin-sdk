@@ -1,6 +1,8 @@
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
-import type { Direction, PaneInfo } from "./protocol/index.ts";
+import type { Direction, MethodMap, PaneInfo } from "./protocol/index.ts";
+
+export type PaneBadge = Omit<MethodMap["workspace.setPaneBadge"]["params"], "paneId">;
 
 export class PaneLeaf {
   constructor(
@@ -97,6 +99,11 @@ export class Workspace extends Events<{
   async listPanes(): Promise<PaneLeaf[]> {
     const infos = await this.host.call("workspace.listPanes", {});
     return infos.map((info) => new PaneLeaf(this.host, info));
+  }
+
+  /** Puts a badge on the tab of the pane registered as `paneId`. Pass no count and no text to clear it. */
+  async setBadge(paneId: string, badge: PaneBadge = {}): Promise<void> {
+    await this.host.call("workspace.setPaneBadge", { paneId, ...badge });
   }
 
   async getLeavesOfType(paneId: string): Promise<PaneLeaf[]> {

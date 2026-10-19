@@ -7,7 +7,7 @@ import type { MenuItem as WireMenuItem } from "./protocol/index.ts";
 import { API_VERSION } from "./protocol/index.ts";
 import { HandlerScope } from "./serialize.ts";
 import { SettingContainer } from "./settings.ts";
-import { Menu, type MenuItem } from "./ui.ts";
+import { deliverNoticeAction, Menu, type MenuItem } from "./ui.ts";
 
 export interface StartOptions {
   /** Defaults to the port Jensen handed this realm at boot. Tests pass a `TestHost` connection. */
@@ -156,6 +156,14 @@ function wire(plugin: Plugin, app: App): void {
 
   host.handle("status.click", async ({ id }) => {
     await registry.statusItems.get(id)?.click();
+    return null;
+  });
+  host.handle("notice.action", async ({ noticeId, actionId }) => {
+    deliverNoticeAction(app, noticeId, actionId);
+    return null;
+  });
+  host.handle("decoration.action", async (payload) => {
+    app.editor.trigger("decoration-action", payload);
     return null;
   });
   host.handle("markdown.render", async ({ id, source }) => {

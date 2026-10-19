@@ -23,5 +23,18 @@ Any other refusal still rejects with a [`HostError`](/reference/errors).
   anything running, anything not tied to the project, and the primary checkout's volumes unless the person
   ticks them. The answer also lists the `removed` items.
 
+## On session cards
+
+```ts
+await this.app.sessions.setChip(session.id, { text: "2 stacks", tone: "warning", tooltip: "db, web" });
+await this.app.sessions.clearChip(session.id);
+await this.app.sessions.open(session.id);
+const { confirmed } = await this.app.sessions.sendContext(session.id, "The db stack on 5432 is down.");
+```
+
+`setChip` replaces the chip this plugin put on that card. `open` focuses the session's pane. `sendContext`
+shows the text to the person and asks before it reaches the agent, and resolves to `{ confirmed }`. All four
+need `sessions` in the manifest and a Jensen that supports them.
+
 A [Rust backend](/guide/backend#reach-jensen-from-the-backend) can remove its caller's own session stack
 with `run::remove_own()`, without a prompt.

@@ -1,8 +1,10 @@
+import { type Confirmation, confirmation } from "./confirmed.ts";
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
-import type { EventMap, Session, Worktree } from "./protocol/index.ts";
+import type { EventMap, MethodMap, Session, Worktree } from "./protocol/index.ts";
 
 export type WorktreeRemoval = EventMap["worktrees.removed"];
+export type SessionChip = Omit<MethodMap["sessions.setChip"]["params"], "sessionId">;
 
 /** The project's sessions, one per agent working in its own worktree. Needs `sessions` in the manifest. */
 export class Sessions extends Events<{
@@ -17,6 +19,25 @@ export class Sessions extends Events<{
 
   list(): Promise<Session[]> {
     return this.host.call("sessions.list", {});
+  }
+
+  /** Puts a short chip on the session's card, replacing the one this plugin put there before. */
+  async setChip(sessionId: string, chip: SessionChip): Promise<void> {
+    await this.host.call("sessions.setChip", { sessionId, ...chip });
+  }
+
+  async clearChip(sessionId: string): Promise<void> {
+    await this.host.call("sessions.clearChip", { sessionId });
+  }
+
+  /** Focuses the session's pane. */
+  async open(sessionId: string): Promise<void> {
+    await this.host.call("sessions.open", { sessionId });
+  }
+
+  /** Offers text to a session. Jensen shows it and asks the person before it is delivered. */
+  sendContext(sessionId: string, text: string): Promise<Confirmation> {
+    return confirmation(this.host.call("sessions.sendContext", { sessionId, text }));
   }
 }
 

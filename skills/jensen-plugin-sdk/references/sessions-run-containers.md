@@ -47,6 +47,12 @@ export default class Watcher extends Plugin {
   need them.
 - `logs` returns one page `{ lines, cursor? }`. `logsAll` follows the cursor until it is absent.
 
+## Session cards
+
+With `sessions`: `setChip(sessionId, { text, tone?, tooltip? })` and `clearChip(sessionId)` mark a card,
+`open(sessionId)` focuses its pane, and `sendContext(sessionId, text)` offers text to the agent. Jensen shows the
+text and asks the person first, and the call resolves to `{ confirmed }`.
+
 ## Actions
 
 Each needs `run: "control"` or `containers: "control"`. Jensen asks the person to confirm every one, and each

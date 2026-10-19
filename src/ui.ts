@@ -1,24 +1,57 @@
 import type { App } from "./app.ts";
 import type { HostConnection } from "./connection.ts";
 import { currentApp } from "./context.ts";
-import type { Severity, Tone } from "./protocol/index.ts";
+import { type Disposable, toDisposable } from "./disposable.ts";
+import type { NoticeAction, Severity, Tone } from "./protocol/index.ts";
 
 export interface NoticeOptions {
   severity?: Severity;
   timeoutMs?: number;
+  /** Buttons on the toast. Listen for the one pressed with `notice.onAction`. */
+  actions?: NoticeAction[];
 }
 
-/** A toast. `new Notice("Saved")` works anywhere inside a running plugin. */
+type ActionListener = (actionId: string) => void;
+
+const noticeListeners = new WeakMap<App, Map<string, Set<ActionListener>>>();
+
+/** Hands a pressed toast button to the notice that showed it. Called by the SDK when Jensen reports one. */
+export function deliverNoticeAction(app: App, noticeId: string, actionId: string): void {
+  for (const listener of [...(noticeListeners.get(app)?.get(noticeId) ?? [])]) listener(actionId);
+}
+
+/**
+ * A toast. `new Notice("Saved")` works anywhere inside a running plugin. With `actions` it shows buttons,
+ * and `onAction` hears which one was pressed, which needs a Jensen that supports them.
+ */
 export class Notice {
+  private readonly listeners = new Set<ActionListener>();
+
   constructor(message: string, options: NoticeOptions = {}) {
     const app = currentApp();
     app
-      .call("ui.notice", { message, severity: options.severity, timeoutMs: options.timeoutMs })
+      .call("ui.notice", {
+        message,
+        severity: options.severity,
+        timeoutMs: options.timeoutMs,
+        actions: options.actions,
+      })
+      .then((id) => {
+        if (typeof id !== "string") return;
+        const byId = noticeListeners.get(app) ?? new Map<string, Set<ActionListener>>();
+        byId.set(id, this.listeners);
+        noticeListeners.set(app, byId);
+      })
       .catch((cause) => {
         queueMicrotask(() => {
           throw cause;
         });
       });
+  }
+
+  onAction(callback: ActionListener): Disposable {
+    this.listeners.add(callback);
+    return toDisposable(() => this.listeners.delete(callback));
   }
 }
 

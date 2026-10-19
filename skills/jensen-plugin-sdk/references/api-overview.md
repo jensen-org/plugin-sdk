@@ -52,11 +52,16 @@ Event emitters (`workspace`, `editor`, `files`, `theme`, `settings`) share `on(n
 | `files` | `create`, `modify`, `delete`, `rename` (after `files.watch`) |
 | `theme` | `change` |
 | `settings` | `change` |
+| `sessions` | `change`, `remove` |
+| `worktrees` | `change`, `remove` |
+| `run` | `change`, `remove` |
+| `containers` | `event` |
 
 Services return `Promise<T>` where `T` defaults to `unknown`, so pass a type argument:
 `this.app.git.history<Commit[]>({ limit: 20 })`. `graph`: `explainService`, `dependencies`, `impact`, `query`.
 `knowledge`: `search`, `ingest`. `git`: `history`, `semanticDiff`. `net.fetch(host, path, options)` returns
-`{ status, body }` for an https host listed under `network`.
+`{ status, body }` for an https host listed under `network`. `app.project` is `{ id, name }` or undefined. `sessions`,
+`worktrees`, `run` and `containers` are covered in [sessions-run-containers](sessions-run-containers.md).
 
 ## UI classes
 
