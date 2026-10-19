@@ -19,5 +19,6 @@ test("registers a command", async () => {
 
 `host.respondTo("fs.read", () => "contents")` answers a call, `host.emit("theme.changed", ...)` fires an
 event, and `new TestHost({ permissions: ["workspace"] })` makes a call to any other capability fail with
-`permission_denied`, so a test can check what your manifest needs. `new TestHost({ asGlobalPort: true })` lets you import a
+`permission_denied`, so a test can check what your manifest needs. `permissions` takes capability names, so
+`editor: "write"` is listed as both `"editor:read"` and `"editor:write"`. `new TestHost({ asGlobalPort: true })` lets you import a
 built `main.js` and run it for real.

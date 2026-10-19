@@ -37,7 +37,7 @@ export class Notice {
         actions: options.actions,
       })
       .then((id) => {
-        if (typeof id !== "string") return;
+        if (typeof id !== "string" || !options.actions?.length) return;
         const byId = noticeListeners.get(app) ?? new Map<string, Set<ActionListener>>();
         byId.set(id, this.listeners);
         noticeListeners.set(app, byId);

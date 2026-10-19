@@ -56,6 +56,18 @@ describe("notice actions", () => {
 
     expect(host.callsTo("ui.notice")).toEqual([{ message: "Saved" }]);
   });
+
+  test("keeps no listener for a notice without actions", async () => {
+    await run({ respond: { "ui.notice": () => "n1" } });
+    const notice = new Notice("Saved");
+    const pressed: string[] = [];
+    notice.onAction((id) => pressed.push(id));
+    await host.settle();
+
+    await host.request("notice.action", { noticeId: "n1", actionId: "a" });
+
+    expect(pressed).toEqual([]);
+  });
 });
 
 describe("pane badges", () => {
