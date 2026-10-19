@@ -254,6 +254,13 @@ export declare class Component {
     registerInterval(id: number): number;
 }
 
+// confirmed.d.ts
+export interface Confirmation {
+    confirmed: boolean;
+}
+/** Turns a refused confirmation into `{ confirmed: false }`, whether the host answers it or rejects it as cancelled. */
+export declare function confirmation<T extends Confirmation>(call: Promise<T>): Promise<T | Confirmation>;
+
 // connection.d.ts
 import { type Disposable } from "./disposable.ts";
 import { type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName } from "./protocol/index.ts";
@@ -288,15 +295,17 @@ export declare class HostConnection {
 }
 
 // containers.d.ts
+import { type Confirmation } from "./confirmed.ts";
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
-import type { Container, ContainerImage, ContainerNetwork, ContainerVolume, EventMap, LogLine, MethodMap } from "./protocol/index.ts";
+import type { Container, ContainerImage, ContainerItem, ContainerNetwork, ContainerVolume, EventMap, LogLine, MethodMap } from "./protocol/index.ts";
 export type ContainerEvent = EventMap["containers.event"];
 export type LogOptions = Omit<MethodMap["containers.logs"]["params"], "id">;
 export type LogPage = MethodMap["containers.logs"]["result"];
+export type RemoveResult = MethodMap["containers.remove"]["result"];
 /**
  * The containers, volumes, images and networks Jensen can tie to the open project, from Docker and from
- * its sandbox. Needs `containers` in the manifest. Environment values are never part of a container.
+ * its sandbox. Needs `containers` in the manifest, and `containers: "control"` to stop, restart or remove. Environment values are never part of a container.
  */
 export declare class Containers extends Events<{
     event: [ContainerEvent];
@@ -311,6 +320,14 @@ export declare class Containers extends Events<{
     logs(id: string, options?: LogOptions): Promise<LogPage>;
     /** Every line of a container's logs, following the cursor until the host has no more. */
     logsAll(id: string, options?: Omit<LogOptions, "cursor">): AsyncGenerator<LogLine>;
+    /** Stops a container Jensen did not start. Jensen asks the person to confirm. */
+    stop(id: string): Promise<Confirmation>;
+    restart(id: string): Promise<Confirmation>;
+    /**
+     * Removes leftovers. Jensen lists them with their sizes and the person confirms. It refuses anything
+     * running or not tied to the project, and says which items it removed.
+     */
+    remove(items: ContainerItem[]): Promise<RemoveResult | Confirmation>;
 }
 
 // context.d.ts
@@ -472,8 +489,9 @@ export { Backend, type BackendResult } from "./backend.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
+export type { Confirmation } from "./confirmed.ts";
 export { HostConnection } from "./connection.ts";
-export { type ContainerEvent, Containers, type LogOptions, type LogPage, } from "./containers.ts";
+export { type ContainerEvent, Containers, type LogOptions, type LogPage, type RemoveResult, } from "./containers.ts";
 export { type Disposable, DisposableStore, toDisposable } from "./disposable.ts";
 export { Decorations, Editor, type EditorSelection } from "./editor.ts";
 export { HostError, NotInJensenError } from "./errors.ts";
@@ -483,7 +501,7 @@ export { CustomPaneView, type PaneContext, type PaneOptions, PaneView, type Pane
 export { type DataOptions, type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
 export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
-export { Run } from "./run.ts";
+export { Run, type RunTarget } from "./run.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
 export { Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
 export { ButtonComponent, ColorComponent, DropdownComponent, NumberComponent, Setting, SettingContainer, SettingTab, SliderComponent, TextAreaComponent, TextComponent, ToggleComponent, } from "./settings.ts";
@@ -687,10 +705,15 @@ export declare class Registry {
 }
 
 // run.d.ts
+import { type Confirmation } from "./confirmed.ts";
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
 import type { RunInstance, RunService } from "./protocol/index.ts";
-/** Run's detected services and the instances it started, or that were started outside Jensen. Needs `run` in the manifest. */
+export interface RunTarget {
+    serviceId: string;
+    sessionId?: string;
+}
+/** Run's detected services and the instances it started, or that were started outside Jensen. Needs `run` in the manifest, and `run: "control"` to start, stop or restart. */
 export declare class Run extends Events<{
     change: [RunInstance];
     remove: [string];
@@ -699,6 +722,10 @@ export declare class Run extends Events<{
     constructor(host: HostConnection);
     services(): Promise<RunService[]>;
     list(): Promise<RunInstance[]>;
+    /** Starts a service through Run. Jensen asks the person to confirm, and the answer says whether they did. */
+    start(target: RunTarget): Promise<Confirmation>;
+    stop(target: RunTarget): Promise<Confirmation>;
+    restart(target: RunTarget): Promise<Confirmation>;
 }
 
 // serialize.d.ts

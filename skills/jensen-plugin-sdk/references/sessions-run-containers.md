@@ -46,3 +46,40 @@ export default class Watcher extends Plugin {
 - A container never has environment values. Logs can hold sensitive data, so ask for `containers` only when you
   need them.
 - `logs` returns one page `{ lines, cursor? }`. `logsAll` follows the cursor until it is absent.
+
+## Actions
+
+Each needs `run: "control"` or `containers: "control"`. Jensen asks the person to confirm every one, and each
+resolves to `{ confirmed }`. A declined confirmation is `{ confirmed: false }`, not an exception.
+
+| Call | Notes |
+|---|---|
+| `run.start(target)`, `run.stop(target)`, `run.restart(target)` | `target` is `{ serviceId, sessionId? }` |
+| `containers.stop(id)`, `containers.restart(id)` | only containers tied to the project that Jensen did not start |
+| `containers.remove([{ kind, id }])` | refuses running or untied items. The result lists `removed` |
+
+```ts check
+import { Plugin } from "@jensen-org/plugin-sdk";
+
+export default class Cleaner extends Plugin {
+  onload() {
+    this.addCommand({
+      id: "clean",
+      name: "Clean volumes",
+      callback: async () => {
+        const volumes = await this.app.containers.volumes();
+        const unused = volumes.filter((volume) => volume.inUseBy.length === 0);
+        const answer = await this.app.containers.remove(
+          unused.map((volume) => ({ kind: "volume" as const, id: volume.name })),
+        );
+        if (!answer.confirmed) return;
+        await this.app.run.restart({ serviceId: "db" });
+      },
+    });
+  }
+}
+```
+
+A Rust backend reaches the same methods with `host_api::call`, reads its caller with `host_api::context()`,
+waits in the host with `wait::until`, and removes its caller's own session stack with `run::remove_own()`.
+Those host imports need a Jensen that provides them.

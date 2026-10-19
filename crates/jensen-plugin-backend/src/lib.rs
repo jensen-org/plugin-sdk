@@ -1,9 +1,11 @@
 mod abi;
 pub mod fs;
 mod host;
+pub mod host_api;
 
 pub use abi::{Backend, Method};
 pub use host::{LogLevel, log};
+pub use host_api::{CallContext, Caller, call, containers, context, git, run, storage, wait};
 pub use serde_json::{Value, json};
 
 #[doc(hidden)]

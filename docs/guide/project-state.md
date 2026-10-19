@@ -1,7 +1,8 @@
 # Sessions, Run and containers
 
 Jensen runs several agents on one project at once, each in its own worktree. A plugin can follow that work
-through four objects on `app`: `sessions`, `worktrees`, `run` and `containers`. They are read only.
+through four objects on `app`: `sessions`, `worktrees`, `run` and `containers`. They are read only here.
+[Acting on Run and containers](/guide/project-actions) covers the actions.
 
 Each one needs its own permission in the manifest, see [permissions](/reference/permissions). These calls
 need a Jensen that carries them, so check `app.appVersion` before relying on one.

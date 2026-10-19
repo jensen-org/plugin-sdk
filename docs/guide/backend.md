@@ -18,7 +18,7 @@ scaffolds a plugin with a backend crate and a viewer toolbar that calls it.
 crate-type = ["cdylib"]
 
 [dependencies]
-jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.2.0" }
+jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.3.0" }
 ```
 
 ```rust
@@ -83,6 +83,43 @@ description for the agent: it decides from it when to call the tool.
 such as `*.yaml` it shows the folders and the files in scope and nothing else. A backend that imports
 `fs_list` needs a Jensen that provides it (minimum app version to be set when the app ships it), and one that
 never lists a folder keeps loading everywhere.
+
+## Reach Jensen from the backend
+
+`host_api::call(method, params)` runs a protocol method as the plugin, under the same capability checks as
+the frontend, so the backend needs the same manifest permissions. UI methods are refused, and a refusal comes
+back as the host's own message. Typed helpers cover the common ones: `run::list()`, `run::remove_own()`,
+`containers::logs(id, &options)`, `git::history(params)`, `storage::load()` and `storage::load_project()`.
+
+`host_api::context()` says who is calling: `caller` is `Caller::Ui` or `Caller::Agent`, with the `plugin_id`,
+`project_id` and, for an agent that called through a session, its `session_id` and `checkout` (that
+session's worktree, relative to the project root).
+
+A backend has no clock and each call has a time limit, so waiting happens in the host:
+`wait::until(&Condition::Container { id, state }, timeout_ms)` returns `true` once the container is running or
+healthy, a log line matches, or a run reaches a status, and `false` when the timeout passes first. Keep the
+timeout below the call limit.
+
+`run::remove_own()` removes the calling session's own Compose project, with its volumes and built images, and
+is refused when the call has no session. It is the one action that needs no confirmation.
+
+To test without Jensen, answer the host natively:
+
+```rust
+use jensen_plugin_backend::host_api::{CallContext, Caller, set_test_context, set_test_responder};
+
+set_test_context(&CallContext {
+    caller: Caller::Agent,
+    plugin_id: "acme.containers".into(),
+    project_id: "p1".into(),
+    session_id: Some("s1".into()),
+    checkout: None,
+});
+set_test_responder(|method, _params| Ok(serde_json::json!({ "lines": [] })));
+```
+
+`host_call` and `context` need a Jensen that provides them. Until the app ships them, a backend that imports
+them does not load, so the minimum app version is set when they do.
 
 ## What the sandbox allows
 

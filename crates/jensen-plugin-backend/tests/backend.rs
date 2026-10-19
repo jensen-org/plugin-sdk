@@ -78,3 +78,97 @@ fn a_folder_lists_through_the_native_fallback() {
     assert!(jensen_plugin_backend::fs::list(&format!("{root}/missing")).is_err());
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+mod host_access {
+    use jensen_plugin_backend::host_api::{
+        self, CallContext, Caller, clear_test_host, set_test_context, set_test_responder, wait,
+    };
+    use jensen_plugin_backend::{Backend, json};
+
+    fn agent() -> CallContext {
+        CallContext {
+            caller: Caller::Agent,
+            plugin_id: "acme.containers".into(),
+            project_id: "p1".into(),
+            session_id: Some("s1".into()),
+            checkout: Some(".jensen/worktrees/a".into()),
+        }
+    }
+
+    #[test]
+    fn a_method_reads_the_caller_and_calls_the_host() {
+        set_test_context(&agent());
+        set_test_responder(|method, params| {
+            assert_eq!(method, "containers.logs");
+            Ok(json!({ "lines": [], "id": params["id"], "tail": params["tail"] }))
+        });
+        let mut backend = Backend::default();
+        backend.method("logs", |input| {
+            let context = host_api::context()?;
+            let page = host_api::containers::logs(
+                input["id"].as_str().ok_or("id is required")?,
+                &host_api::containers::LogOptions {
+                    tail: Some(20),
+                    ..Default::default()
+                },
+            )?;
+            Ok(json!({ "session": context.session_id, "page": page }))
+        });
+
+        let reply: serde_json::Value =
+            serde_json::from_slice(&backend.handle("logs", br#"{"id":"c1"}"#)).expect("envelope");
+
+        assert_eq!(
+            reply,
+            json!({ "ok": { "session": "s1", "page": { "lines": [], "id": "c1", "tail": 20 } } })
+        );
+        clear_test_host();
+    }
+
+    #[test]
+    fn the_context_reads_back_what_the_test_set() {
+        set_test_context(&agent());
+        assert_eq!(host_api::context().expect("context"), agent());
+        clear_test_host();
+        assert!(host_api::context().is_err());
+    }
+
+    #[test]
+    fn an_unknown_method_surfaces_the_hosts_message() {
+        set_test_responder(|method, _| Err(format!("the plugin API has no method '{method}'")));
+        assert_eq!(
+            host_api::call("nope.missing", json!({})),
+            Err("the plugin API has no method 'nope.missing'".to_string())
+        );
+        clear_test_host();
+    }
+
+    #[test]
+    fn remove_own_and_wait_read_the_hosts_answers() {
+        set_test_responder(|method, params| match method {
+            "run.removeOwn" => Ok(json!({ "removed": true })),
+            "wait.until" => {
+                assert_eq!(
+                    params,
+                    json!({
+                        "condition": { "kind": "container", "id": "c1", "state": "healthy" },
+                        "timeoutMs": 5000
+                    })
+                );
+                Ok(json!({ "met": false }))
+            }
+            _ => Err("unexpected".into()),
+        });
+
+        assert_eq!(host_api::run::remove_own(), Ok(true));
+        let met = wait::until(
+            &wait::Condition::Container {
+                id: "c1".into(),
+                state: "healthy".into(),
+            },
+            5000,
+        );
+        assert_eq!(met, Ok(false));
+        clear_test_host();
+    }
+}

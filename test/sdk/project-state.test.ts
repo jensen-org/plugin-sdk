@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
   type Container,
+  HostError,
   type LogLine,
   Plugin,
   type RunInstance,
@@ -186,5 +187,73 @@ describe("containers", () => {
     await host.settle();
 
     expect(seen).toEqual(["container:die"]);
+  });
+});
+
+describe("actions", () => {
+  test("starts, stops and restarts a service with the target the plugin named", async () => {
+    const plugin = await run({
+      respond: {
+        "run.start": () => ({ confirmed: true }),
+        "run.stop": () => ({ confirmed: true }),
+        "run.restart": () => ({ confirmed: true }),
+      },
+    });
+
+    expect(await plugin.app.run.start({ serviceId: "db", sessionId: "s1" })).toEqual({
+      confirmed: true,
+    });
+    await plugin.app.run.stop({ serviceId: "db" });
+    await plugin.app.run.restart({ serviceId: "db" });
+
+    expect(host.callsTo("run.start")).toEqual([{ serviceId: "db", sessionId: "s1" }]);
+    expect(host.callsTo("run.stop")).toEqual([{ serviceId: "db" }]);
+    expect(host.callsTo("run.restart")).toEqual([{ serviceId: "db" }]);
+  });
+
+  test("stops, restarts and removes containers with the ids it was given", async () => {
+    const plugin = await run({
+      respond: {
+        "containers.stop": () => ({ confirmed: true }),
+        "containers.restart": () => ({ confirmed: true }),
+        "containers.remove": ({ items }) => ({ confirmed: true, removed: items }),
+      },
+    });
+
+    await plugin.app.containers.stop("c1");
+    await plugin.app.containers.restart("c2");
+    const removed = await plugin.app.containers.remove([{ kind: "volume", id: "data" }]);
+
+    expect(host.callsTo("containers.stop")).toEqual([{ id: "c1" }]);
+    expect(host.callsTo("containers.restart")).toEqual([{ id: "c2" }]);
+    expect(removed).toEqual({ confirmed: true, removed: [{ kind: "volume", id: "data" }] });
+  });
+
+  test("reports a declined confirmation instead of throwing", async () => {
+    const plugin = await run({
+      respond: {
+        "run.stop": () => ({ confirmed: false }),
+        "containers.stop": () => {
+          throw new HostError("cancelled", "the person declined");
+        },
+      },
+    });
+
+    expect(await plugin.app.run.stop({ serviceId: "db" })).toEqual({ confirmed: false });
+    expect(await plugin.app.containers.stop("c1")).toEqual({ confirmed: false });
+  });
+
+  test("still throws when the host refuses for another reason", async () => {
+    const plugin = await run({
+      respond: {
+        "containers.remove": () => {
+          throw new HostError("permission_denied", "containers control is not granted");
+        },
+      },
+    });
+
+    await expect(plugin.app.containers.remove([{ kind: "image", id: "i1" }])).rejects.toMatchObject(
+      { code: "permission_denied" },
+    );
   });
 });

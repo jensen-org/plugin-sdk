@@ -1,4 +1,5 @@
 import { HostConnection } from "./connection.ts";
+import { HostError } from "./errors.ts";
 import {
   API_VERSION,
   type CallbackMap,
@@ -166,7 +167,7 @@ export class TestHost {
             id: message.id,
             kind: "res",
             error: {
-              code: "failed",
+              code: cause instanceof HostError ? cause.code : "failed",
               message: cause instanceof Error ? cause.message : String(cause),
             },
           }),

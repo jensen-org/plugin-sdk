@@ -13,7 +13,7 @@ export interface Answers {
   backend?: boolean;
 }
 
-const SDK_VERSION = "^0.2.0";
+const SDK_VERSION = "^0.3.0";
 
 export function slug(text: string): string {
   const out = text
@@ -113,7 +113,7 @@ edition = "2024"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.2.0" }
+jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.3.0" }
 
 [profile.release]
 opt-level = "s"

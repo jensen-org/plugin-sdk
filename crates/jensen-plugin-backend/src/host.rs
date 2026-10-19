@@ -30,6 +30,15 @@ mod imports {
         ) -> i32;
         pub fn fs_delete(path_ptr: i32, path_len: i32, out_ptr: i32, out_len: i32) -> i32;
         pub fn fs_list(path_ptr: i32, path_len: i32, out_ptr: i32, out_len: i32) -> i32;
+        pub fn host_call(
+            method_ptr: i32,
+            method_len: i32,
+            params_ptr: i32,
+            params_len: i32,
+            out_ptr: i32,
+            out_len: i32,
+        ) -> i32;
+        pub fn context(out_ptr: i32, out_len: i32) -> i32;
         pub fn log(level_ptr: i32, level_len: i32, text_ptr: i32, text_len: i32);
     }
 }
@@ -118,6 +127,34 @@ pub(crate) fn list_dir(path: &str) -> Result<Vec<u8>, String> {
     outcome(status, ptr, len)
 }
 
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn call_method(method: &str, params: &[u8]) -> Result<Vec<u8>, String> {
+    let (mut ptr, mut len) = (0i32, 0i32);
+    let status = unsafe {
+        imports::host_call(
+            address(method.as_bytes()),
+            length(method.as_bytes()),
+            address(params),
+            length(params),
+            &mut ptr as *mut i32 as usize as i32,
+            &mut len as *mut i32 as usize as i32,
+        )
+    };
+    outcome(status, ptr, len)
+}
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn call_context() -> Result<Vec<u8>, String> {
+    let (mut ptr, mut len) = (0i32, 0i32);
+    let status = unsafe {
+        imports::context(
+            &mut ptr as *mut i32 as usize as i32,
+            &mut len as *mut i32 as usize as i32,
+        )
+    };
+    outcome(status, ptr, len)
+}
+
 /// Writes a line to Jensen's plugin log.
 #[cfg(target_arch = "wasm32")]
 pub fn log(level: LogLevel, text: &str) {
@@ -168,6 +205,44 @@ pub(crate) fn list_dir(path: &str) -> Result<Vec<u8>, String> {
     }
     entries.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
     serde_json::to_vec(&entries).map_err(|error| error.to_string())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+type Responder = Box<dyn Fn(&str, serde_json::Value) -> Result<serde_json::Value, String>>;
+
+#[cfg(not(target_arch = "wasm32"))]
+thread_local! {
+    static RESPONDER: std::cell::RefCell<Option<Responder>> = const { std::cell::RefCell::new(None) };
+    static CONTEXT: std::cell::RefCell<Option<Vec<u8>>> = const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn set_responder(responder: Option<Responder>) {
+    RESPONDER.with(|slot| *slot.borrow_mut() = responder);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn set_context(context: Option<Vec<u8>>) {
+    CONTEXT.with(|slot| *slot.borrow_mut() = context);
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn call_method(method: &str, params: &[u8]) -> Result<Vec<u8>, String> {
+    let params = serde_json::from_slice(params).map_err(|error| error.to_string())?;
+    let answer = RESPONDER.with(|slot| match slot.borrow().as_ref() {
+        Some(responder) => responder(method, params),
+        None => Err("no host is answering: call set_test_responder first".to_string()),
+    })?;
+    serde_json::to_vec(&answer).map_err(|error| error.to_string())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn call_context() -> Result<Vec<u8>, String> {
+    CONTEXT.with(|slot| {
+        slot.borrow()
+            .clone()
+            .ok_or_else(|| "no caller context: call set_test_context first".to_string())
+    })
 }
 
 /// Writes a line to Jensen's plugin log. Natively, which is how tests run, it goes to standard error.

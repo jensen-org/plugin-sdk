@@ -3,12 +3,14 @@ export { Backend, type BackendResult } from "./backend.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
+export type { Confirmation } from "./confirmed.ts";
 export { HostConnection } from "./connection.ts";
 export {
   type ContainerEvent,
   Containers,
   type LogOptions,
   type LogPage,
+  type RemoveResult,
 } from "./containers.ts";
 export { type Disposable, DisposableStore, toDisposable } from "./disposable.ts";
 export { Decorations, Editor, type EditorSelection } from "./editor.ts";
@@ -31,7 +33,7 @@ export {
 } from "./plugin.ts";
 export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
-export { Run } from "./run.ts";
+export { Run, type RunTarget } from "./run.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
 export { Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
 export {
