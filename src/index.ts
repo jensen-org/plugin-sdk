@@ -17,6 +17,7 @@ export {
   type PaneViewConstructor,
 } from "./pane.ts";
 export {
+  type DataOptions,
   type MenuContexts,
   type MenuTarget,
   Plugin,

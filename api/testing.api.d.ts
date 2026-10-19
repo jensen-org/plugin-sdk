@@ -1,6 +1,6 @@
 // testing.d.ts
 import { HostConnection } from "./connection.ts";
-import { type Capability, type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName, type Surface } from "./protocol/index.ts";
+import { type CallbackMap, type CallbackName, type Capability, type EventMap, type EventName, type MethodMap, type MethodName, type Surface } from "./protocol/index.ts";
 export interface TestHostOptions {
     /**
      * Hand the plugin's end of the port over as `globalThis.__jensenPort`, the way Jensen does at boot,

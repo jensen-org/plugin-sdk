@@ -79,6 +79,11 @@ export class App {
     return this.hello.appVersion;
   }
 
+  /** The open project. Undefined in a Jensen too old to say. */
+  get project(): Hello["project"] {
+    return this.hello.project;
+  }
+
   /**
    * True when this copy of the plugin runs inside one of its own custom panes. Registrations are
    * skipped there, because the copy that runs headless has already made them.

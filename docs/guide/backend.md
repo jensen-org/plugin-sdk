@@ -77,6 +77,13 @@ Every entry under `tools` is a method of the backend. Agents see them through `l
 them with `call_plugin_tool`, named `<plugin_id>_<tool>`, even when Jensen's window is closed. Write the
 description for the agent: it decides from it when to call the tool.
 
+## List a folder
+
+`fs::list("docs")` returns the folder's entries as `DirEntry { name, kind, size }`. Under a file type scope
+such as `*.yaml` it shows the folders and the files in scope and nothing else. A backend that imports
+`fs_list` needs a Jensen that provides it (minimum app version to be set when the app ships it), and one that
+never lists a folder keeps loading everywhere.
+
 ## What the sandbox allows
 
 The backend is deny by default. It reaches only the files that fall inside the `fs` scopes the user approved

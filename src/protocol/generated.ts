@@ -5,7 +5,7 @@ export const API_VERSION = 1 as const;
 export const ERROR_CODES = ["bad_request","permission_denied","not_found","failed","cancelled","rate_limited","too_busy","killed","io_budget_exceeded","unsupported"] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network";
+export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network" | "sessions" | "run:read" | "run:control" | "containers:read" | "containers:control";
 
 export type Handler = { "handler": string };
 
@@ -33,7 +33,7 @@ export type SettingControl = { "type": "heading"; "text": string } | { "type": "
 
 export type MenuItem = { "id": string; "label": string; "icon"?: string; "disabled"?: boolean; "separatorBefore"?: boolean; "children"?: MenuItem[] };
 
-export type Decoration = { "kind": "mark"; "from": number; "to": number; "tone"?: Tone; "tooltip"?: string } | { "kind": "line"; "line": number; "tone"?: Tone } | { "kind": "gutter"; "line": number; "text": string; "tone"?: Tone; "tooltip"?: string } | { "kind": "hint"; "at": number; "text": string; "tone"?: Tone };
+export type Decoration = { "kind": "mark"; "from": number; "to": number; "tone"?: Tone; "action"?: DecorationAction; "tooltip"?: string } | { "kind": "line"; "line": number; "tone"?: Tone; "action"?: DecorationAction } | { "kind": "gutter"; "line": number; "text": string; "tone"?: Tone; "action"?: DecorationAction; "tooltip"?: string } | { "kind": "hint"; "at": number; "text": string; "tone"?: Tone; "action"?: DecorationAction };
 
 export type ActiveEditor = { "path": string | null; "languageId": string; "dirty": boolean; "lineCount": number; "selection": Range; "cursor": Position };
 
@@ -49,12 +49,44 @@ export type FileStat = { "kind": "file" | "dir"; "size": number; "modifiedMs": n
 
 export type Surface = { "kind": "headless" } | { "kind": "pane"; "paneId": string; "instanceId": string; "state": unknown };
 
+export type Project = { "id": string; "name": string };
+
+export type Session = { "id": string; "number"?: number; "title"?: string; "status": "needs_input" | "blocked" | "working" | "idle" | "finished"; "branch"?: string; "worktree"?: string; "plan"?: { "id": string; "title": string } };
+
+export type Worktree = { "path": string; "branch": string; "head": string; "isPrimary": boolean; "locked": boolean; "merged": boolean; "idleDays": number; "sessionId"?: string };
+
+export type RunService = { "id": string; "name": string; "kind": "compose" | "package" | "make" | "procfile" | "runner"; "source": { "file": string; "line"?: number }; "composeFile"?: string; "composeService"?: string; "command"?: string };
+
+export type RunInstance = { "id": string; "serviceId": string; "sessionId"?: string; "worktree"?: string; "status": "starting" | "running" | "exited" | "failed" | "stopped"; "exitCode"?: number; "ports": { "declared"?: number; "host": number }[]; "composeProject"?: string; "startedAt": string; "origin": "jensen" | "outside" };
+
+export type ContainerEngine = "docker" | "sandbox";
+
+export type ContainerTie = "run" | "compose_project" | "working_dir" | "bind_mount";
+
+export type Container = { "id": string; "name": string; "engine": ContainerEngine; "tiedBy": ContainerTie; "composeProject"?: string; "composeService"?: string; "workingDir"?: string; "image": string; "state": "created" | "running" | "restarting" | "exited" | "dead" | "paused"; "health"?: "starting" | "healthy" | "unhealthy"; "exitCode"?: number; "oomKilled": boolean; "restartCount": number; "ports": { "hostIp"?: string; "host": number; "container": number; "protocol": string }[]; "mounts": { "type": string; "source"?: string; "target": string; "readOnly": boolean }[]; "labels": Record<string, string>; "createdAt": string; "startedAt"?: string; "finishedAt"?: string };
+
+export type ContainerVolume = { "name": string; "engine": ContainerEngine; "tiedBy": ContainerTie; "composeProject"?: string; "sizeBytes"?: number; "inUseBy": string[] };
+
+export type ContainerImage = { "id": string; "engine": ContainerEngine; "tiedBy": ContainerTie; "composeProject"?: string; "sizeBytes"?: number; "inUseBy": string[]; "name"?: string };
+
+export type ContainerNetwork = { "name": string; "engine": ContainerEngine; "tiedBy": ContainerTie; "composeProject"?: string; "sizeBytes"?: number; "inUseBy": string[] };
+
+export type LogLine = { "at": string; "stream": "stdout" | "stderr"; "text": string };
+
+export type ContainerItem = { "kind": "container" | "volume" | "image" | "network"; "id": string };
+
+export type DecorationAction = { "id": string; "title": string };
+
+export type NoticeAction = { "id": string; "label": string };
+
+export type WaitCondition = { "kind": "container"; "id": string; "state": "running" | "healthy" } | { "kind": "log"; "id": string; "pattern": string } | { "kind": "run"; "id": string; "status": "running" | "exited" | "failed" | "stopped" };
+
 export interface MethodMap {
-  "plugin.hello": { params: { "apiVersion": number }; result: { "pluginId": string; "appVersion": string; "surface": Surface; "theme": ActiveTheme } };
+  "plugin.hello": { params: { "apiVersion": number }; result: { "pluginId": string; "appVersion": string; "surface": Surface; "theme": ActiveTheme; "project"?: Project } };
   "plugin.ready": { params: Record<string, never>; result: null };
   "log": { params: { "level": "info" | "warn" | "error"; "text": string }; result: null };
-  "storage.load": { params: Record<string, never>; result: unknown };
-  "storage.save": { params: { "data": unknown }; result: null };
+  "storage.load": { params: { "scope"?: "global" | "project" }; result: unknown };
+  "storage.save": { params: { "data": unknown; "scope"?: "global" | "project" }; result: null };
   "workspace.currentPage": { params: Record<string, never>; result: "session" | "code" | "notes" };
   "workspace.registerPane": { params: { "id": string; "title": string; "icon"?: string; "singleton"?: boolean; "render": "declarative" | "custom" }; result: null };
   "workspace.unregisterPane": { params: { "id": string }; result: null };
@@ -64,6 +96,28 @@ export interface MethodMap {
   "workspace.movePane": { params: { "instanceId": string; "direction": Direction; "referenceInstanceId": string }; result: null };
   "workspace.listPanes": { params: Record<string, never>; result: PaneInfo[] };
   "workspace.setPaneState": { params: { "instanceId": string; "state": unknown }; result: null };
+  "sessions.list": { params: Record<string, never>; result: Session[] };
+  "worktrees.list": { params: Record<string, never>; result: Worktree[] };
+  "sessions.setChip": { params: { "sessionId": string; "text": string; "tone"?: Tone; "tooltip"?: string }; result: null };
+  "sessions.clearChip": { params: { "sessionId": string }; result: null };
+  "sessions.open": { params: { "sessionId": string }; result: null };
+  "sessions.sendContext": { params: { "sessionId": string; "text": string }; result: { "confirmed": boolean } };
+  "run.services": { params: Record<string, never>; result: RunService[] };
+  "run.list": { params: Record<string, never>; result: RunInstance[] };
+  "run.start": { params: { "serviceId": string; "sessionId"?: string }; result: { "confirmed": boolean } };
+  "run.stop": { params: { "serviceId": string; "sessionId"?: string }; result: { "confirmed": boolean } };
+  "run.restart": { params: { "serviceId": string; "sessionId"?: string }; result: { "confirmed": boolean } };
+  "run.removeOwn": { params: Record<string, never>; result: { "removed": boolean } };
+  "containers.list": { params: Record<string, never>; result: Container[] };
+  "containers.volumes": { params: Record<string, never>; result: ContainerVolume[] };
+  "containers.images": { params: Record<string, never>; result: ContainerImage[] };
+  "containers.networks": { params: Record<string, never>; result: ContainerNetwork[] };
+  "containers.logs": { params: { "id": string; "since"?: string; "until"?: string; "tail"?: number; "cursor"?: string }; result: { "lines": LogLine[]; "cursor"?: string } };
+  "containers.stop": { params: { "id": string }; result: { "confirmed": boolean } };
+  "containers.restart": { params: { "id": string }; result: { "confirmed": boolean } };
+  "containers.remove": { params: { "items": ContainerItem[] }; result: { "confirmed": boolean; "removed"?: ContainerItem[] } };
+  "wait.until": { params: { "condition": WaitCondition; "timeoutMs"?: number }; result: { "met": boolean } };
+  "workspace.setPaneBadge": { params: { "paneId": string; "count"?: number; "text"?: string; "tone"?: Tone }; result: null };
   "workspace.refreshPane": { params: { "instanceId"?: string }; result: null };
   "commands.register": { params: { "id": string; "name": string; "icon"?: string; "category"?: string; "hotkey"?: Hotkey; "when"?: string; "checked"?: boolean }; result: null };
   "commands.unregister": { params: { "id": string }; result: null };
@@ -106,7 +160,7 @@ export interface MethodMap {
   "fs.rename": { params: { "from": string; "to": string }; result: null };
   "fs.watch": { params: { "path": string }; result: { "watchId": string } };
   "fs.unwatch": { params: { "watchId": string }; result: null };
-  "ui.notice": { params: { "message": string; "severity"?: Severity; "timeoutMs"?: number }; result: null };
+  "ui.notice": { params: { "message": string; "severity"?: Severity; "timeoutMs"?: number; "actions"?: NoticeAction[] }; result: string | null };
   "ui.confirm": { params: { "title": string; "message": string; "confirmLabel"?: string; "danger"?: boolean }; result: boolean };
   "ui.choose": { params: { "title": string; "message": string; "choices": { "id": string; "label": string }[] }; result: string | null };
   "ui.prompt": { params: { "title": string; "message"?: string; "placeholder"?: string; "initial"?: string; "confirmLabel"?: string }; result: string | null };
@@ -145,6 +199,28 @@ export const METHOD_CAPABILITY: Record<MethodName, Capability> = {
   "workspace.movePane": "workspace",
   "workspace.listPanes": "workspace",
   "workspace.setPaneState": "workspace",
+  "sessions.list": "sessions",
+  "worktrees.list": "sessions",
+  "sessions.setChip": "sessions",
+  "sessions.clearChip": "sessions",
+  "sessions.open": "sessions",
+  "sessions.sendContext": "sessions",
+  "run.services": "run:read",
+  "run.list": "run:read",
+  "run.start": "run:control",
+  "run.stop": "run:control",
+  "run.restart": "run:control",
+  "run.removeOwn": "run:control",
+  "containers.list": "containers:read",
+  "containers.volumes": "containers:read",
+  "containers.images": "containers:read",
+  "containers.networks": "containers:read",
+  "containers.logs": "containers:read",
+  "containers.stop": "containers:control",
+  "containers.restart": "containers:control",
+  "containers.remove": "containers:control",
+  "wait.until": "none",
+  "workspace.setPaneBadge": "workspace",
   "workspace.refreshPane": "none",
   "commands.register": "none",
   "commands.unregister": "none",
@@ -222,6 +298,8 @@ export interface CallbackMap {
   "menu.build": { params: { "menuId": string; "context": Record<string, unknown> }; result: MenuItem[] };
   "menu.select": { params: { "menuId": string; "itemId": string; "context": Record<string, unknown> }; result: null };
   "viewer.render": { params: { "toolbarId": string; "path": string }; result: { "children": Node[] } };
+  "notice.action": { params: { "noticeId": string; "actionId": string }; result: null };
+  "decoration.action": { params: { "key": string; "path": string; "actionId": string }; result: null };
   "status.click": { params: { "id": string }; result: null };
   "markdown.render": { params: { "id": string; "source": string }; result: { "html": string } };
   "plugin.unload": { params: Record<string, never>; result: null };
@@ -242,6 +320,13 @@ export interface EventMap {
   "theme.changed": ActiveTheme;
   "fs.changed": { "watchId": string; "kind": "create" | "modify" | "delete" | "rename"; "path": string; "from"?: string };
   "settings.changed": { "key": string; "value": unknown };
+  "sessions.changed": { "session": Session };
+  "sessions.removed": { "id": string };
+  "worktrees.changed": { "worktree": Worktree };
+  "worktrees.removed": { "path": string; "branch": string; "sessionId"?: string };
+  "run.changed": { "run": RunInstance };
+  "run.removed": { "id": string };
+  "containers.event": { "id": string; "kind": "container" | "volume" | "image" | "network"; "action": string; "at": string; "exitCode"?: number; "health"?: "starting" | "healthy" | "unhealthy" };
   "keymap.changed": Record<string, never>;
 }
 
@@ -260,5 +345,12 @@ export const EVENT_CAPABILITY: Record<EventName, Capability> = {
   "theme.changed": "none",
   "fs.changed": "fs",
   "settings.changed": "settings",
+  "sessions.changed": "sessions",
+  "sessions.removed": "sessions",
+  "worktrees.changed": "sessions",
+  "worktrees.removed": "sessions",
+  "run.changed": "run:read",
+  "run.removed": "run:read",
+  "containers.event": "containers:read",
   "keymap.changed": "none",
 };

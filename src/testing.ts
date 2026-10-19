@@ -73,6 +73,7 @@ export class TestHost {
       appVersion: "0.0.0",
       surface: options.surface ?? { kind: "headless" },
       theme: { id: "test", appearance: "dark", tokens: {} },
+      project: { id: "test.project", name: "test" },
     }));
     for (const [method, fn] of Object.entries(options.respond ?? {})) {
       this.responders.set(method, fn as Responder);

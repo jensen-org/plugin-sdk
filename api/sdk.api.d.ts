@@ -52,6 +52,8 @@ export declare class App {
     get pluginId(): string;
     /** The version of Jensen this plugin is running in. */
     get appVersion(): string;
+    /** The open project. Undefined in a Jensen too old to say. */
+    get project(): Hello["project"];
     /**
      * True when this copy of the plugin runs inside one of its own custom panes. Registrations are
      * skipped there, because the copy that runs headless has already made them.
@@ -444,7 +446,7 @@ export { HostError, NotInJensenError } from "./errors.ts";
 export { type EventRef, Events } from "./events.ts";
 export { type FileChange, FileEntry, FileSystemEntry, Files, FolderEntry } from "./files.ts";
 export { CustomPaneView, type PaneContext, type PaneOptions, PaneView, type PaneViewConstructor, } from "./pane.ts";
-export { type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
+export { type DataOptions, type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
 export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
@@ -544,6 +546,10 @@ export interface MenuContexts {
     };
 }
 export type ApiVersion = typeof API_VERSION;
+/** `project` keeps the data apart for each project. The default, `global`, is shared by all of them. */
+export interface DataOptions {
+    scope?: "global" | "project";
+}
 /**
  * The one class a plugin extends. Register what the plugin adds in `onload()`; everything registered
  * through it is removed again when the plugin unloads.
@@ -564,8 +570,8 @@ export declare abstract class Plugin extends Component {
     get id(): string;
     /** The `when` that limits a hotkey to one of this plugin's panes. */
     paneFocus(paneId: string): string;
-    loadData<T = unknown>(): Promise<T | null>;
-    saveData(data: unknown): Promise<null>;
+    loadData<T = unknown>(options?: DataOptions): Promise<T | null>;
+    saveData(data: unknown, options?: DataOptions): Promise<null>;
     addCommand(spec: CommandSpec): Disposable;
     registerPane<S = unknown>(id: string, view: PaneViewConstructor<S>, options: PaneOptions): Disposable;
     addSettingTab(tab: SettingTab): Disposable;

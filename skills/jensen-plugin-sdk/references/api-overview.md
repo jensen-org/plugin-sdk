@@ -21,7 +21,7 @@ The protocol version `API_VERSION` is `1`. `requireApiVersion(app, 1)` is true w
 |---|---|
 | `app: App`, `id` | the object graph and the plugin id |
 | `onload()`, `onunload()` | both may be async. Register in `onload()` |
-| `loadData<T>()`, `saveData(data)` | the plugin's own JSON data. `loadData` returns `null` when nothing was saved |
+| `loadData<T>(options?)`, `saveData(data, options?)` | the plugin's own JSON data, shared by all projects unless `options.scope` is `"project"`. `loadData` returns `null` when nothing was saved |
 | `addCommand(spec)` | `CommandSpec`: `id`, `name`, `icon?`, `category?`, `hotkey?: { key, when? }`, `check?`, `callback` |
 | `registerPane(id, View, options)` | `options`: `title`, `icon?`, `singleton?` |
 | `addSettingTab(tab)` | a `SettingTab` subclass |

@@ -2,7 +2,7 @@
 export declare const API_VERSION: 1;
 export declare const ERROR_CODES: readonly ["bad_request", "permission_denied", "not_found", "failed", "cancelled", "rate_limited", "too_busy", "killed", "io_budget_exceeded", "unsupported"];
 export type ErrorCode = (typeof ERROR_CODES)[number];
-export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network";
+export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network" | "sessions" | "run:read" | "run:control" | "containers:read" | "containers:control";
 export type Handler = {
     "handler": string;
 };
@@ -252,22 +252,26 @@ export type Decoration = {
     "from": number;
     "to": number;
     "tone"?: Tone;
+    "action"?: DecorationAction;
     "tooltip"?: string;
 } | {
     "kind": "line";
     "line": number;
     "tone"?: Tone;
+    "action"?: DecorationAction;
 } | {
     "kind": "gutter";
     "line": number;
     "text": string;
     "tone"?: Tone;
+    "action"?: DecorationAction;
     "tooltip"?: string;
 } | {
     "kind": "hint";
     "at": number;
     "text": string;
     "tone"?: Tone;
+    "action"?: DecorationAction;
 };
 export type ActiveEditor = {
     "path": string | null;
@@ -314,6 +318,147 @@ export type Surface = {
     "instanceId": string;
     "state": unknown;
 };
+export type Project = {
+    "id": string;
+    "name": string;
+};
+export type Session = {
+    "id": string;
+    "number"?: number;
+    "title"?: string;
+    "status": "needs_input" | "blocked" | "working" | "idle" | "finished";
+    "branch"?: string;
+    "worktree"?: string;
+    "plan"?: {
+        "id": string;
+        "title": string;
+    };
+};
+export type Worktree = {
+    "path": string;
+    "branch": string;
+    "head": string;
+    "isPrimary": boolean;
+    "locked": boolean;
+    "merged": boolean;
+    "idleDays": number;
+    "sessionId"?: string;
+};
+export type RunService = {
+    "id": string;
+    "name": string;
+    "kind": "compose" | "package" | "make" | "procfile" | "runner";
+    "source": {
+        "file": string;
+        "line"?: number;
+    };
+    "composeFile"?: string;
+    "composeService"?: string;
+    "command"?: string;
+};
+export type RunInstance = {
+    "id": string;
+    "serviceId": string;
+    "sessionId"?: string;
+    "worktree"?: string;
+    "status": "starting" | "running" | "exited" | "failed" | "stopped";
+    "exitCode"?: number;
+    "ports": {
+        "declared"?: number;
+        "host": number;
+    }[];
+    "composeProject"?: string;
+    "startedAt": string;
+    "origin": "jensen" | "outside";
+};
+export type ContainerEngine = "docker" | "sandbox";
+export type ContainerTie = "run" | "compose_project" | "working_dir" | "bind_mount";
+export type Container = {
+    "id": string;
+    "name": string;
+    "engine": ContainerEngine;
+    "tiedBy": ContainerTie;
+    "composeProject"?: string;
+    "composeService"?: string;
+    "workingDir"?: string;
+    "image": string;
+    "state": "created" | "running" | "restarting" | "exited" | "dead" | "paused";
+    "health"?: "starting" | "healthy" | "unhealthy";
+    "exitCode"?: number;
+    "oomKilled": boolean;
+    "restartCount": number;
+    "ports": {
+        "hostIp"?: string;
+        "host": number;
+        "container": number;
+        "protocol": string;
+    }[];
+    "mounts": {
+        "type": string;
+        "source"?: string;
+        "target": string;
+        "readOnly": boolean;
+    }[];
+    "labels": Record<string, string>;
+    "createdAt": string;
+    "startedAt"?: string;
+    "finishedAt"?: string;
+};
+export type ContainerVolume = {
+    "name": string;
+    "engine": ContainerEngine;
+    "tiedBy": ContainerTie;
+    "composeProject"?: string;
+    "sizeBytes"?: number;
+    "inUseBy": string[];
+};
+export type ContainerImage = {
+    "id": string;
+    "engine": ContainerEngine;
+    "tiedBy": ContainerTie;
+    "composeProject"?: string;
+    "sizeBytes"?: number;
+    "inUseBy": string[];
+    "name"?: string;
+};
+export type ContainerNetwork = {
+    "name": string;
+    "engine": ContainerEngine;
+    "tiedBy": ContainerTie;
+    "composeProject"?: string;
+    "sizeBytes"?: number;
+    "inUseBy": string[];
+};
+export type LogLine = {
+    "at": string;
+    "stream": "stdout" | "stderr";
+    "text": string;
+};
+export type ContainerItem = {
+    "kind": "container" | "volume" | "image" | "network";
+    "id": string;
+};
+export type DecorationAction = {
+    "id": string;
+    "title": string;
+};
+export type NoticeAction = {
+    "id": string;
+    "label": string;
+};
+export type WaitCondition = {
+    "kind": "container";
+    "id": string;
+    "state": "running" | "healthy";
+} | {
+    "kind": "log";
+    "id": string;
+    "pattern": string;
+} | {
+    "kind": "run";
+    "id": string;
+    "status": "running" | "exited" | "failed" | "stopped";
+};
 export interface MethodMap {
     "plugin.hello": {
         params: {
@@ -324,6 +469,7 @@ export interface MethodMap {
             "appVersion": string;
             "surface": Surface;
             "theme": ActiveTheme;
+            "project"?: Project;
         };
     };
     "plugin.ready": {
@@ -338,12 +484,15 @@ export interface MethodMap {
         result: null;
     };
     "storage.load": {
-        params: Record<string, never>;
+        params: {
+            "scope"?: "global" | "project";
+        };
         result: unknown;
     };
     "storage.save": {
         params: {
             "data": unknown;
+            "scope"?: "global" | "project";
         };
         result: null;
     };
@@ -407,6 +556,157 @@ export interface MethodMap {
         params: {
             "instanceId": string;
             "state": unknown;
+        };
+        result: null;
+    };
+    "sessions.list": {
+        params: Record<string, never>;
+        result: Session[];
+    };
+    "worktrees.list": {
+        params: Record<string, never>;
+        result: Worktree[];
+    };
+    "sessions.setChip": {
+        params: {
+            "sessionId": string;
+            "text": string;
+            "tone"?: Tone;
+            "tooltip"?: string;
+        };
+        result: null;
+    };
+    "sessions.clearChip": {
+        params: {
+            "sessionId": string;
+        };
+        result: null;
+    };
+    "sessions.open": {
+        params: {
+            "sessionId": string;
+        };
+        result: null;
+    };
+    "sessions.sendContext": {
+        params: {
+            "sessionId": string;
+            "text": string;
+        };
+        result: {
+            "confirmed": boolean;
+        };
+    };
+    "run.services": {
+        params: Record<string, never>;
+        result: RunService[];
+    };
+    "run.list": {
+        params: Record<string, never>;
+        result: RunInstance[];
+    };
+    "run.start": {
+        params: {
+            "serviceId": string;
+            "sessionId"?: string;
+        };
+        result: {
+            "confirmed": boolean;
+        };
+    };
+    "run.stop": {
+        params: {
+            "serviceId": string;
+            "sessionId"?: string;
+        };
+        result: {
+            "confirmed": boolean;
+        };
+    };
+    "run.restart": {
+        params: {
+            "serviceId": string;
+            "sessionId"?: string;
+        };
+        result: {
+            "confirmed": boolean;
+        };
+    };
+    "run.removeOwn": {
+        params: Record<string, never>;
+        result: {
+            "removed": boolean;
+        };
+    };
+    "containers.list": {
+        params: Record<string, never>;
+        result: Container[];
+    };
+    "containers.volumes": {
+        params: Record<string, never>;
+        result: ContainerVolume[];
+    };
+    "containers.images": {
+        params: Record<string, never>;
+        result: ContainerImage[];
+    };
+    "containers.networks": {
+        params: Record<string, never>;
+        result: ContainerNetwork[];
+    };
+    "containers.logs": {
+        params: {
+            "id": string;
+            "since"?: string;
+            "until"?: string;
+            "tail"?: number;
+            "cursor"?: string;
+        };
+        result: {
+            "lines": LogLine[];
+            "cursor"?: string;
+        };
+    };
+    "containers.stop": {
+        params: {
+            "id": string;
+        };
+        result: {
+            "confirmed": boolean;
+        };
+    };
+    "containers.restart": {
+        params: {
+            "id": string;
+        };
+        result: {
+            "confirmed": boolean;
+        };
+    };
+    "containers.remove": {
+        params: {
+            "items": ContainerItem[];
+        };
+        result: {
+            "confirmed": boolean;
+            "removed"?: ContainerItem[];
+        };
+    };
+    "wait.until": {
+        params: {
+            "condition": WaitCondition;
+            "timeoutMs"?: number;
+        };
+        result: {
+            "met": boolean;
+        };
+    };
+    "workspace.setPaneBadge": {
+        params: {
+            "paneId": string;
+            "count"?: number;
+            "text"?: string;
+            "tone"?: Tone;
         };
         result: null;
     };
@@ -695,8 +995,9 @@ export interface MethodMap {
             "message": string;
             "severity"?: Severity;
             "timeoutMs"?: number;
+            "actions"?: NoticeAction[];
         };
-        result: null;
+        result: string | null;
     };
     "ui.confirm": {
         params: {
@@ -919,6 +1220,21 @@ export interface CallbackMap {
             "children": Node[];
         };
     };
+    "notice.action": {
+        params: {
+            "noticeId": string;
+            "actionId": string;
+        };
+        result: null;
+    };
+    "decoration.action": {
+        params: {
+            "key": string;
+            "path": string;
+            "actionId": string;
+        };
+        result: null;
+    };
     "status.click": {
         params: {
             "id": string;
@@ -977,6 +1293,34 @@ export interface EventMap {
     "settings.changed": {
         "key": string;
         "value": unknown;
+    };
+    "sessions.changed": {
+        "session": Session;
+    };
+    "sessions.removed": {
+        "id": string;
+    };
+    "worktrees.changed": {
+        "worktree": Worktree;
+    };
+    "worktrees.removed": {
+        "path": string;
+        "branch": string;
+        "sessionId"?: string;
+    };
+    "run.changed": {
+        "run": RunInstance;
+    };
+    "run.removed": {
+        "id": string;
+    };
+    "containers.event": {
+        "id": string;
+        "kind": "container" | "volume" | "image" | "network";
+        "action": string;
+        "at": string;
+        "exitCode"?: number;
+        "health"?: "starting" | "healthy" | "unhealthy";
     };
     "keymap.changed": Record<string, never>;
 }

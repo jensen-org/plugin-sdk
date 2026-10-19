@@ -29,6 +29,7 @@ mod imports {
             out_len: i32,
         ) -> i32;
         pub fn fs_delete(path_ptr: i32, path_len: i32, out_ptr: i32, out_len: i32) -> i32;
+        pub fn fs_list(path_ptr: i32, path_len: i32, out_ptr: i32, out_len: i32) -> i32;
         pub fn log(level_ptr: i32, level_len: i32, text_ptr: i32, text_len: i32);
     }
 }
@@ -103,6 +104,20 @@ pub(crate) fn delete_file(path: &str) -> Result<(), String> {
     outcome(status, ptr, len).map(|_| ())
 }
 
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn list_dir(path: &str) -> Result<Vec<u8>, String> {
+    let (mut ptr, mut len) = (0i32, 0i32);
+    let status = unsafe {
+        imports::fs_list(
+            address(path.as_bytes()),
+            length(path.as_bytes()),
+            &mut ptr as *mut i32 as usize as i32,
+            &mut len as *mut i32 as usize as i32,
+        )
+    };
+    outcome(status, ptr, len)
+}
+
 /// Writes a line to Jensen's plugin log.
 #[cfg(target_arch = "wasm32")]
 pub fn log(level: LogLevel, text: &str) {
@@ -136,6 +151,23 @@ pub(crate) fn write_file(path: &str, data: &[u8]) -> Result<(), String> {
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn delete_file(path: &str) -> Result<(), String> {
     std::fs::remove_file(path).map_err(|error| error.to_string())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn list_dir(path: &str) -> Result<Vec<u8>, String> {
+    let mut entries = Vec::new();
+    for entry in std::fs::read_dir(path).map_err(|error| error.to_string())? {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let metadata = entry.metadata().map_err(|error| error.to_string())?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        entries.push(if metadata.is_dir() {
+            serde_json::json!({ "name": name, "kind": "dir" })
+        } else {
+            serde_json::json!({ "name": name, "kind": "file", "size": metadata.len() })
+        });
+    }
+    entries.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
+    serde_json::to_vec(&entries).map_err(|error| error.to_string())
 }
 
 /// Writes a line to Jensen's plugin log. Natively, which is how tests run, it goes to standard error.

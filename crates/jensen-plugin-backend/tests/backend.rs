@@ -48,3 +48,33 @@ fn files_round_trip_through_the_native_fallback() {
     jensen_plugin_backend::fs::remove(path).expect("remove");
     assert!(jensen_plugin_backend::fs::read(path).is_err());
 }
+
+#[test]
+fn a_folder_lists_through_the_native_fallback() {
+    use jensen_plugin_backend::fs::{DirEntry, EntryKind};
+
+    let dir = std::env::temp_dir().join("jensen-plugin-backend-list-test");
+    let _ = std::fs::remove_dir_all(&dir);
+    let root = dir.to_str().expect("utf-8 path");
+    jensen_plugin_backend::fs::write(&format!("{root}/b.yaml"), b"abc").expect("write");
+    jensen_plugin_backend::fs::write(&format!("{root}/sub/c.yaml"), b"").expect("write");
+
+    let entries = jensen_plugin_backend::fs::list(root).expect("list");
+    assert_eq!(
+        entries,
+        vec![
+            DirEntry {
+                name: "b.yaml".into(),
+                kind: EntryKind::File,
+                size: Some(3)
+            },
+            DirEntry {
+                name: "sub".into(),
+                kind: EntryKind::Dir,
+                size: None
+            },
+        ]
+    );
+    assert!(jensen_plugin_backend::fs::list(&format!("{root}/missing")).is_err());
+    let _ = std::fs::remove_dir_all(&dir);
+}

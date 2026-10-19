@@ -89,6 +89,7 @@ export default class Prefs extends Plugin {
 - `SettingTab` constructor options are `{ id?, title? }`. `refresh()` asks Jensen to redraw, for example
   after the plugin's data changed elsewhere.
 - Persist your own data with `loadData()` and `saveData()`. They need no permission. Merge saved data over
-  defaults, as above, so new fields get a value after an upgrade.
+  defaults, as above, so new fields get a value after an upgrade. Data is shared by all projects unless you
+  pass `{ scope: "project" }`; `this.app.project` is `{ id, name }` or undefined on an older Jensen.
 - Jensen's own settings are `this.app.settings.get(key)` and `set(key, value)` and need `settings` in the
   manifest. They never expose secrets. `this.app.settings.on("change", ...)` reports changes.
