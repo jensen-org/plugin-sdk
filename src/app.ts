@@ -2,10 +2,13 @@ import { AppSettings } from "./app-settings.ts";
 import { Backend } from "./backend.ts";
 import { Commands, Keymap } from "./commands.ts";
 import type { HostConnection } from "./connection.ts";
+import { Containers } from "./containers.ts";
 import { Editor } from "./editor.ts";
 import { Files } from "./files.ts";
 import type { MethodMap, MethodName } from "./protocol/index.ts";
+import { Run } from "./run.ts";
 import { Git, Graph, Knowledge, Net } from "./services.ts";
+import { Sessions, Worktrees } from "./sessions.ts";
 import { Theme } from "./theme.ts";
 import { Viewer } from "./viewer.ts";
 import { Workspace } from "./workspace.ts";
@@ -34,7 +37,7 @@ const REGISTRATIONS = new Set<MethodName>([
 /**
  * The object graph a plugin works through: the workspace, the editor, the project's files, the theme,
  * commands and settings, the file viewers and the plugin's own backend, plus the code graph, knowledge
- * base, git and network when the manifest asks.
+ * base, git, network, sessions, Run and containers when the manifest asks.
  */
 export class App {
   readonly workspace: Workspace;
@@ -50,6 +53,10 @@ export class App {
   readonly net: Net;
   readonly backend: Backend;
   readonly viewer: Viewer;
+  readonly sessions: Sessions;
+  readonly worktrees: Worktrees;
+  readonly run: Run;
+  readonly containers: Containers;
 
   constructor(
     readonly connection: HostConnection,
@@ -68,6 +75,10 @@ export class App {
     this.net = new Net(connection);
     this.backend = new Backend(connection);
     this.viewer = new Viewer(connection);
+    this.sessions = new Sessions(connection);
+    this.worktrees = new Worktrees(connection);
+    this.run = new Run(connection);
+    this.containers = new Containers(connection);
   }
 
   get pluginId(): string {

@@ -19,10 +19,13 @@ import { AppSettings } from "./app-settings.ts";
 import { Backend } from "./backend.ts";
 import { Commands, Keymap } from "./commands.ts";
 import type { HostConnection } from "./connection.ts";
+import { Containers } from "./containers.ts";
 import { Editor } from "./editor.ts";
 import { Files } from "./files.ts";
 import type { MethodMap, MethodName } from "./protocol/index.ts";
+import { Run } from "./run.ts";
 import { Git, Graph, Knowledge, Net } from "./services.ts";
+import { Sessions, Worktrees } from "./sessions.ts";
 import { Theme } from "./theme.ts";
 import { Viewer } from "./viewer.ts";
 import { Workspace } from "./workspace.ts";
@@ -30,7 +33,7 @@ export type Hello = MethodMap["plugin.hello"]["result"];
 /**
  * The object graph a plugin works through: the workspace, the editor, the project's files, the theme,
  * commands and settings, the file viewers and the plugin's own backend, plus the code graph, knowledge
- * base, git and network when the manifest asks.
+ * base, git, network, sessions, Run and containers when the manifest asks.
  */
 export declare class App {
     readonly connection: HostConnection;
@@ -48,6 +51,10 @@ export declare class App {
     readonly net: Net;
     readonly backend: Backend;
     readonly viewer: Viewer;
+    readonly sessions: Sessions;
+    readonly worktrees: Worktrees;
+    readonly run: Run;
+    readonly containers: Containers;
     constructor(connection: HostConnection, hello: Hello);
     get pluginId(): string;
     /** The version of Jensen this plugin is running in. */
@@ -280,6 +287,32 @@ export declare class HostConnection {
     private reply;
 }
 
+// containers.d.ts
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+import type { Container, ContainerImage, ContainerNetwork, ContainerVolume, EventMap, LogLine, MethodMap } from "./protocol/index.ts";
+export type ContainerEvent = EventMap["containers.event"];
+export type LogOptions = Omit<MethodMap["containers.logs"]["params"], "id">;
+export type LogPage = MethodMap["containers.logs"]["result"];
+/**
+ * The containers, volumes, images and networks Jensen can tie to the open project, from Docker and from
+ * its sandbox. Needs `containers` in the manifest. Environment values are never part of a container.
+ */
+export declare class Containers extends Events<{
+    event: [ContainerEvent];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    list(): Promise<Container[]>;
+    volumes(): Promise<ContainerVolume[]>;
+    images(): Promise<ContainerImage[]>;
+    networks(): Promise<ContainerNetwork[]>;
+    /** One page of a container's logs. Pass the `cursor` of the last page to read the next one. */
+    logs(id: string, options?: LogOptions): Promise<LogPage>;
+    /** Every line of a container's logs, following the cursor until the host has no more. */
+    logsAll(id: string, options?: Omit<LogOptions, "cursor">): AsyncGenerator<LogLine>;
+}
+
 // context.d.ts
 import type { App } from "./app.ts";
 export declare function setCurrentApp(app: App | null): void;
@@ -440,6 +473,7 @@ export { type PackageJson, type Problem, validatePackage } from "./cli/validate.
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
 export { HostConnection } from "./connection.ts";
+export { type ContainerEvent, Containers, type LogOptions, type LogPage, } from "./containers.ts";
 export { type Disposable, DisposableStore, toDisposable } from "./disposable.ts";
 export { Decorations, Editor, type EditorSelection } from "./editor.ts";
 export { HostError, NotInJensenError } from "./errors.ts";
@@ -449,7 +483,9 @@ export { CustomPaneView, type PaneContext, type PaneOptions, PaneView, type Pane
 export { type DataOptions, type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
 export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
+export { Run } from "./run.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
+export { Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
 export { ButtonComponent, ColorComponent, DropdownComponent, NumberComponent, Setting, SettingContainer, SettingTab, SliderComponent, TextAreaComponent, TextComponent, ToggleComponent, } from "./settings.ts";
 export { type StartOptions, start } from "./start.ts";
 export { TestHost, type TestHostOptions } from "./testing.ts";
@@ -650,6 +686,21 @@ export declare class Registry {
     owner?: Component;
 }
 
+// run.d.ts
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+import type { RunInstance, RunService } from "./protocol/index.ts";
+/** Run's detected services and the instances it started, or that were started outside Jensen. Needs `run` in the manifest. */
+export declare class Run extends Events<{
+    change: [RunInstance];
+    remove: [string];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    services(): Promise<RunService[]>;
+    list(): Promise<RunInstance[]>;
+}
+
 // serialize.d.ts
 /** Turns the functions a pane puts in its tree into handler ids Jensen can call back. */
 export declare class HandlerScope {
@@ -709,6 +760,30 @@ export declare class Net {
     }>;
 }
 export {};
+
+// sessions.d.ts
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+import type { EventMap, Session, Worktree } from "./protocol/index.ts";
+export type WorktreeRemoval = EventMap["worktrees.removed"];
+/** The project's sessions, one per agent working in its own worktree. Needs `sessions` in the manifest. */
+export declare class Sessions extends Events<{
+    change: [Session];
+    remove: [string];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    list(): Promise<Session[]>;
+}
+/** The project's git worktrees and the session that owns each. Needs `sessions` in the manifest. */
+export declare class Worktrees extends Events<{
+    change: [Worktree];
+    remove: [WorktreeRemoval];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    list(): Promise<Worktree[]>;
+}
 
 // settings.d.ts
 import type { App } from "./app.ts";
