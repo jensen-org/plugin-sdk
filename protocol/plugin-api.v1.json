@@ -6,7 +6,13 @@
   "apiVersion": 1,
   "envelope": {
     "request": { "v": 1, "id": "number", "kind": "req", "method": "string", "params": "any" },
-    "response": { "v": 1, "id": "number", "kind": "res", "result": "any", "error": "{code, message, capability?}" },
+    "response": {
+      "v": 1,
+      "id": "number",
+      "kind": "res",
+      "result": "any",
+      "error": "{code, message, capability?}"
+    },
     "event": { "v": 1, "kind": "evt", "topic": "string", "payload": "any" }
   },
   "errorCodes": [
@@ -45,7 +51,12 @@
       "type": "object",
       "required": ["handler"],
       "additionalProperties": false,
-      "properties": { "handler": { "type": "string", "description": "A plugin side callback id. Jensen answers with node.event when it fires." } }
+      "properties": {
+        "handler": {
+          "type": "string",
+          "description": "A plugin side callback id. Jensen answers with node.event when it fires."
+        }
+      }
     },
     "Tone": { "enum": ["default", "muted", "info", "success", "warning", "danger"] },
     "Severity": { "enum": ["success", "info", "warn", "error"] },
@@ -55,7 +66,10 @@
       "required": ["offset", "line", "column"],
       "additionalProperties": false,
       "properties": {
-        "offset": { "type": "integer", "description": "UTF-16 code unit offset into the document." },
+        "offset": {
+          "type": "integer",
+          "description": "UTF-16 code unit offset into the document."
+        },
         "line": { "type": "integer", "description": "Zero based line." },
         "column": { "type": "integer", "description": "Zero based column in UTF-16 code units." }
       }
@@ -71,8 +85,14 @@
       "required": ["key"],
       "additionalProperties": false,
       "properties": {
-        "key": { "type": "string", "description": "A chord such as Mod+Shift+D. Mod is Cmd on macOS, left Alt on Linux and Ctrl on Windows." },
-        "when": { "type": "string", "description": "A context key expression, for example editorFocus or paneFocus:plugin:dev.me.hello/view." }
+        "key": {
+          "type": "string",
+          "description": "A chord such as Mod+Shift+D. Mod is Cmd on macOS, left Alt on Linux and Ctrl on Windows."
+        },
+        "when": {
+          "type": "string",
+          "description": "A context key expression, for example editorFocus or paneFocus:plugin:dev.me.hello/view."
+        }
       }
     },
     "TableColumn": {
@@ -113,17 +133,109 @@
     },
     "Node": {
       "oneOf": [
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "heading" }, "text": { "type": "string" }, "level": { "enum": [1, 2, 3] } } },
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "text" }, "text": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" } } },
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "code" }, "text": { "type": "string" }, "language": { "type": "string" } } },
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "markdown" }, "text": { "type": "string" } } },
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "badge" }, "text": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" } } },
-        { "type": "object", "required": ["type"], "additionalProperties": false, "properties": { "type": { "const": "divider" } } },
-        { "type": "object", "required": ["type", "children"], "additionalProperties": false, "properties": { "type": { "const": "stack" }, "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }, "gap": { "type": "number" } } },
-        { "type": "object", "required": ["type", "children"], "additionalProperties": false, "properties": { "type": { "const": "row" }, "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }, "gap": { "type": "number" }, "align": { "enum": ["start", "center", "end", "between"] } } },
-        { "type": "object", "required": ["type", "children"], "additionalProperties": false, "properties": { "type": { "const": "toolbar" }, "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } } },
-        { "type": "object", "required": ["type", "children"], "additionalProperties": false, "properties": { "type": { "const": "split" }, "direction": { "enum": ["horizontal", "vertical"] }, "sizes": { "type": "array", "items": { "type": "number" } }, "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } } },
-        { "type": "object", "required": ["type", "title", "children"], "additionalProperties": false, "properties": { "type": { "const": "section" }, "title": { "type": "string" }, "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } } },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "heading" },
+            "text": { "type": "string" },
+            "level": { "enum": [1, 2, 3] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "text" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "code" },
+            "text": { "type": "string" },
+            "language": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "markdown" }, "text": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "badge" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "divider" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "stack" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } },
+            "gap": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "row" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } },
+            "gap": { "type": "number" },
+            "align": { "enum": ["start", "center", "end", "between"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "toolbar" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "split" },
+            "direction": { "enum": ["horizontal", "vertical"] },
+            "sizes": { "type": "array", "items": { "type": "number" } },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "title", "children"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "section" },
+            "title": { "type": "string" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } }
+          }
+        },
         {
           "type": "object",
           "required": ["type", "tabs"],
@@ -148,36 +260,322 @@
             }
           }
         },
-        { "type": "object", "required": ["type", "columns", "rows"], "additionalProperties": false, "properties": { "type": { "const": "table" }, "columns": { "type": "array", "items": { "$ref": "#/$defs/TableColumn" } }, "rows": { "type": "array", "items": { "type": "object", "additionalProperties": { "$ref": "#/$defs/Cell" } } }, "empty": { "type": "string" } } },
-        { "type": "object", "required": ["type", "items"], "additionalProperties": false, "properties": { "type": { "const": "list" }, "items": { "type": "array", "items": { "type": "string" } } } },
-        { "type": "object", "required": ["type", "nodes"], "additionalProperties": false, "properties": { "type": { "const": "tree" }, "nodes": { "type": "array", "items": { "$ref": "#/$defs/TreeNode" } }, "selected": { "type": "string" }, "onSelect": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "items"], "additionalProperties": false, "properties": { "type": { "const": "keyValue" }, "items": { "type": "array", "items": { "type": "object", "required": ["key", "value"], "additionalProperties": false, "properties": { "key": { "type": "string" }, "value": { "type": "string" } } } } } },
-        { "type": "object", "required": ["type", "label", "value"], "additionalProperties": false, "properties": { "type": { "const": "stat" }, "label": { "type": "string" }, "value": { "type": "string" }, "hint": { "type": "string" } } },
-        { "type": "object", "required": ["type", "value"], "additionalProperties": false, "properties": { "type": { "const": "progress" }, "value": { "type": "number" }, "label": { "type": "string" } } },
-        { "type": "object", "required": ["type", "label", "onClick"], "additionalProperties": false, "properties": { "type": { "const": "button" }, "label": { "type": "string" }, "onClick": { "$ref": "#/$defs/Handler" }, "icon": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" } } },
-        { "type": "object", "required": ["type", "icon", "label", "onClick"], "additionalProperties": false, "properties": { "type": { "const": "iconButton" }, "icon": { "type": "string" }, "label": { "type": "string", "description": "The tooltip and the accessible name." }, "onClick": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "value", "onChange"], "additionalProperties": false, "properties": { "type": { "const": "input" }, "label": { "type": "string" }, "value": { "type": "string" }, "placeholder": { "type": "string" }, "onChange": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "value", "onChange"], "additionalProperties": false, "properties": { "type": { "const": "textarea" }, "label": { "type": "string" }, "value": { "type": "string" }, "rows": { "type": "integer" }, "onChange": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "label", "value", "onChange"], "additionalProperties": false, "properties": { "type": { "const": "toggle" }, "label": { "type": "string" }, "value": { "type": "boolean" }, "onChange": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "label", "value", "onChange"], "additionalProperties": false, "properties": { "type": { "const": "checkbox" }, "label": { "type": "string" }, "value": { "type": "boolean" }, "onChange": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "value", "options", "onChange"], "additionalProperties": false, "properties": { "type": { "const": "select" }, "label": { "type": "string" }, "value": { "type": "string" }, "options": { "type": "array", "items": { "type": "object", "required": ["value", "label"], "additionalProperties": false, "properties": { "value": { "type": "string" }, "label": { "type": "string" } } } }, "onChange": { "$ref": "#/$defs/Handler" } } },
-        { "type": "object", "required": ["type", "title"], "additionalProperties": false, "properties": { "type": { "const": "empty" }, "title": { "type": "string" }, "hint": { "type": "string" } } },
-        { "type": "object", "required": ["type"], "additionalProperties": false, "properties": { "type": { "const": "spinner" }, "label": { "type": "string" } } },
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "message" }, "text": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" } } }
+        {
+          "type": "object",
+          "required": ["type", "columns", "rows"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "table" },
+            "columns": { "type": "array", "items": { "$ref": "#/$defs/TableColumn" } },
+            "rows": {
+              "type": "array",
+              "items": { "type": "object", "additionalProperties": { "$ref": "#/$defs/Cell" } }
+            },
+            "empty": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "list" },
+            "items": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "nodes"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "tree" },
+            "nodes": { "type": "array", "items": { "$ref": "#/$defs/TreeNode" } },
+            "selected": { "type": "string" },
+            "onSelect": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "items"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "keyValue" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["key", "value"],
+                "additionalProperties": false,
+                "properties": { "key": { "type": "string" }, "value": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "stat" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "hint": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "progress" },
+            "value": { "type": "number" },
+            "label": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "onClick"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "button" },
+            "label": { "type": "string" },
+            "onClick": { "$ref": "#/$defs/Handler" },
+            "icon": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "icon", "label", "onClick"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "iconButton" },
+            "icon": { "type": "string" },
+            "label": { "type": "string", "description": "The tooltip and the accessible name." },
+            "onClick": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "input" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "placeholder": { "type": "string" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "textarea" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "rows": { "type": "integer" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "toggle" },
+            "label": { "type": "string" },
+            "value": { "type": "boolean" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "label", "value", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "checkbox" },
+            "label": { "type": "string" },
+            "value": { "type": "boolean" },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "value", "options", "onChange"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "select" },
+            "label": { "type": "string" },
+            "value": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["value", "label"],
+                "additionalProperties": false,
+                "properties": { "value": { "type": "string" }, "label": { "type": "string" } }
+              }
+            },
+            "onChange": { "$ref": "#/$defs/Handler" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "title"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "empty" },
+            "title": { "type": "string" },
+            "hint": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "spinner" }, "label": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "message" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        }
       ]
     },
     "SettingControl": {
       "oneOf": [
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "heading" }, "text": { "type": "string" } } },
-        { "type": "object", "required": ["type", "text"], "additionalProperties": false, "properties": { "type": { "const": "description" }, "text": { "type": "string" } } },
-        { "type": "object", "required": ["type", "key", "name", "value"], "additionalProperties": false, "properties": { "type": { "const": "text" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "string" }, "placeholder": { "type": "string" } } },
-        { "type": "object", "required": ["type", "key", "name", "value"], "additionalProperties": false, "properties": { "type": { "const": "textarea" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "string" } } },
-        { "type": "object", "required": ["type", "key", "name", "value"], "additionalProperties": false, "properties": { "type": { "const": "number" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "number" }, "min": { "type": "number" }, "max": { "type": "number" }, "step": { "type": "number" } } },
-        { "type": "object", "required": ["type", "key", "name", "value"], "additionalProperties": false, "properties": { "type": { "const": "toggle" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "boolean" } } },
-        { "type": "object", "required": ["type", "key", "name", "value", "options"], "additionalProperties": false, "properties": { "type": { "const": "dropdown" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "string" }, "options": { "type": "array", "items": { "type": "object", "required": ["value", "label"], "additionalProperties": false, "properties": { "value": { "type": "string" }, "label": { "type": "string" } } } } } },
-        { "type": "object", "required": ["type", "key", "name", "value", "min", "max"], "additionalProperties": false, "properties": { "type": { "const": "slider" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "number" }, "min": { "type": "number" }, "max": { "type": "number" }, "step": { "type": "number" } } },
-        { "type": "object", "required": ["type", "key", "name", "value"], "additionalProperties": false, "properties": { "type": { "const": "color" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "value": { "type": "string", "description": "#rrggbb" } } },
-        { "type": "object", "required": ["type", "key", "name", "label"], "additionalProperties": false, "properties": { "type": { "const": "button" }, "key": { "type": "string" }, "name": { "type": "string" }, "desc": { "type": "string" }, "label": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" } } }
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "heading" }, "text": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "text"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "description" }, "text": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "text" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string" },
+            "placeholder": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "textarea" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "number" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "number" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "toggle" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value", "options"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "dropdown" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string" },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["value", "label"],
+                "additionalProperties": false,
+                "properties": { "value": { "type": "string" }, "label": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value", "min", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "slider" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "number" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "step": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "color" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "value": { "type": "string", "description": "#rrggbb" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "key", "name", "label"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "button" },
+            "key": { "type": "string" },
+            "name": { "type": "string" },
+            "desc": { "type": "string" },
+            "label": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" }
+          }
+        }
       ]
     },
     "MenuItem": {
@@ -195,10 +593,55 @@
     },
     "Decoration": {
       "oneOf": [
-        { "type": "object", "required": ["kind", "from", "to"], "additionalProperties": false, "properties": { "kind": { "const": "mark" }, "from": { "type": "integer" }, "to": { "type": "integer" }, "tone": { "$ref": "#/$defs/Tone" }, "action": { "$ref": "#/$defs/DecorationAction" }, "tooltip": { "type": "string" } } },
-        { "type": "object", "required": ["kind", "line"], "additionalProperties": false, "properties": { "kind": { "const": "line" }, "line": { "type": "integer" }, "tone": { "$ref": "#/$defs/Tone" }, "action": { "$ref": "#/$defs/DecorationAction" } } },
-        { "type": "object", "required": ["kind", "line", "text"], "additionalProperties": false, "properties": { "kind": { "const": "gutter" }, "line": { "type": "integer" }, "text": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" }, "action": { "$ref": "#/$defs/DecorationAction" }, "tooltip": { "type": "string" } } },
-        { "type": "object", "required": ["kind", "at", "text"], "additionalProperties": false, "properties": { "kind": { "const": "hint" }, "at": { "type": "integer" }, "text": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" }, "action": { "$ref": "#/$defs/DecorationAction" } } }
+        {
+          "type": "object",
+          "required": ["kind", "from", "to"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "mark" },
+            "from": { "type": "integer" },
+            "to": { "type": "integer" },
+            "tone": { "$ref": "#/$defs/Tone" },
+            "action": { "$ref": "#/$defs/DecorationAction" },
+            "tooltip": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "line"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "line" },
+            "line": { "type": "integer" },
+            "tone": { "$ref": "#/$defs/Tone" },
+            "action": { "$ref": "#/$defs/DecorationAction" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "line", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "gutter" },
+            "line": { "type": "integer" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" },
+            "action": { "$ref": "#/$defs/DecorationAction" },
+            "tooltip": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "at", "text"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "hint" },
+            "at": { "type": "integer" },
+            "text": { "type": "string" },
+            "tone": { "$ref": "#/$defs/Tone" },
+            "action": { "$ref": "#/$defs/DecorationAction" }
+          }
+        }
       ]
     },
     "ActiveEditor": {
@@ -206,7 +649,10 @@
       "required": ["path", "languageId", "dirty", "selection", "cursor", "lineCount"],
       "additionalProperties": false,
       "properties": {
-        "path": { "type": ["string", "null"], "description": "Null for an unsaved scratch buffer." },
+        "path": {
+          "type": ["string", "null"],
+          "description": "Null for an unsaved scratch buffer."
+        },
         "languageId": { "type": "string" },
         "dirty": { "type": "boolean" },
         "lineCount": { "type": "integer" },
@@ -224,8 +670,14 @@
         "ref": { "type": "string" },
         "title": { "type": "string" },
         "active": { "type": "boolean" },
-        "pluginId": { "type": "string", "description": "Present when the pane belongs to a plugin." },
-        "paneId": { "type": "string", "description": "The id the owning plugin registered it under." }
+        "pluginId": {
+          "type": "string",
+          "description": "Present when the pane belongs to a plugin."
+        },
+        "paneId": {
+          "type": "string",
+          "description": "The id the owning plugin registered it under."
+        }
       }
     },
     "ThemeInfo": {
@@ -245,7 +697,11 @@
       "properties": {
         "id": { "type": "string" },
         "appearance": { "enum": ["light", "dark"] },
-        "tokens": { "type": "object", "additionalProperties": { "type": "string" }, "description": "CSS custom properties, for example --bg-0." }
+        "tokens": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "CSS custom properties, for example --bg-0."
+        }
       }
     },
     "DirEntry": {
@@ -270,7 +726,12 @@
     },
     "Surface": {
       "oneOf": [
-        { "type": "object", "required": ["kind"], "additionalProperties": false, "properties": { "kind": { "const": "headless" } } },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "headless" } }
+        },
         {
           "type": "object",
           "required": ["kind", "paneId", "instanceId", "state"],
@@ -284,29 +745,277 @@
         }
       ]
     },
-    "Project": {"type": "object", "required": ["id", "name"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "name": {"type": "string"}}},
-    "Session": {"type": "object", "required": ["id", "status"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "number": {"type": "integer"}, "title": {"type": "string"}, "status": {"enum": ["needs_input", "blocked", "working", "idle", "finished"]}, "branch": {"type": "string"}, "worktree": {"type": "string", "description": "Project relative path."}, "plan": {"type": "object", "required": ["id", "title"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "title": {"type": "string"}}}}},
-    "Worktree": {"type": "object", "required": ["path", "branch", "head", "isPrimary", "locked", "merged", "idleDays"], "additionalProperties": false, "properties": {"path": {"type": "string", "description": "Project relative path."}, "branch": {"type": "string"}, "head": {"type": "string"}, "isPrimary": {"type": "boolean"}, "locked": {"type": "boolean"}, "merged": {"type": "boolean"}, "idleDays": {"type": "integer"}, "sessionId": {"type": "string"}}},
-    "RunService": {"type": "object", "required": ["id", "name", "kind", "source"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "kind": {"enum": ["compose", "package", "make", "procfile", "runner"]}, "source": {"type": "object", "required": ["file"], "additionalProperties": false, "properties": {"file": {"type": "string"}, "line": {"type": "integer"}}}, "composeFile": {"type": "string"}, "composeService": {"type": "string"}, "command": {"type": "string"}}},
-    "RunInstance": {"type": "object", "required": ["id", "serviceId", "status", "ports", "startedAt", "origin"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "serviceId": {"type": "string"}, "sessionId": {"type": "string"}, "worktree": {"type": "string"}, "status": {"enum": ["starting", "running", "exited", "failed", "stopped"]}, "exitCode": {"type": "integer"}, "ports": {"type": "array", "items": {"type": "object", "required": ["host"], "additionalProperties": false, "properties": {"declared": {"type": "integer"}, "host": {"type": "integer"}}}}, "composeProject": {"type": "string"}, "startedAt": {"type": "string"}, "origin": {"enum": ["jensen", "outside"]}}},
-    "ContainerEngine": {"enum": ["docker", "sandbox"]},
-    "ContainerTie": {"enum": ["run", "compose_project", "working_dir", "bind_mount"], "description": "Why Jensen tied the object to the open project."},
-    "Container": {"type": "object", "required": ["id", "name", "engine", "tiedBy", "image", "state", "oomKilled", "restartCount", "ports", "mounts", "labels", "createdAt"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "engine": {"$ref": "#/$defs/ContainerEngine"}, "tiedBy": {"$ref": "#/$defs/ContainerTie"}, "composeProject": {"type": "string"}, "composeService": {"type": "string"}, "workingDir": {"type": "string"}, "image": {"type": "string"}, "state": {"enum": ["created", "running", "restarting", "exited", "dead", "paused"]}, "health": {"enum": ["starting", "healthy", "unhealthy"]}, "exitCode": {"type": "integer"}, "oomKilled": {"type": "boolean"}, "restartCount": {"type": "integer"}, "ports": {"type": "array", "items": {"type": "object", "required": ["host", "container", "protocol"], "additionalProperties": false, "properties": {"hostIp": {"type": "string"}, "host": {"type": "integer"}, "container": {"type": "integer"}, "protocol": {"type": "string"}}}}, "mounts": {"type": "array", "items": {"type": "object", "required": ["type", "target", "readOnly"], "additionalProperties": false, "properties": {"type": {"type": "string"}, "source": {"type": "string"}, "target": {"type": "string"}, "readOnly": {"type": "boolean"}}}}, "labels": {"type": "object", "additionalProperties": {"type": "string"}}, "createdAt": {"type": "string"}, "startedAt": {"type": "string"}, "finishedAt": {"type": "string"}}},
-    "ContainerVolume": {"type": "object", "required": ["name", "engine", "tiedBy", "inUseBy"], "additionalProperties": false, "properties": {"name": {"type": "string"}, "engine": {"$ref": "#/$defs/ContainerEngine"}, "tiedBy": {"$ref": "#/$defs/ContainerTie"}, "composeProject": {"type": "string"}, "sizeBytes": {"type": "integer"}, "inUseBy": {"type": "array", "items": {"type": "string"}}}},
-    "ContainerImage": {"type": "object", "required": ["id", "engine", "tiedBy", "inUseBy"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "engine": {"$ref": "#/$defs/ContainerEngine"}, "tiedBy": {"$ref": "#/$defs/ContainerTie"}, "composeProject": {"type": "string"}, "sizeBytes": {"type": "integer"}, "inUseBy": {"type": "array", "items": {"type": "string"}}, "name": {"type": "string"}}},
-    "ContainerNetwork": {"type": "object", "required": ["name", "engine", "tiedBy", "inUseBy"], "additionalProperties": false, "properties": {"name": {"type": "string"}, "engine": {"$ref": "#/$defs/ContainerEngine"}, "tiedBy": {"$ref": "#/$defs/ContainerTie"}, "composeProject": {"type": "string"}, "sizeBytes": {"type": "integer"}, "inUseBy": {"type": "array", "items": {"type": "string"}}}},
-    "LogLine": {"type": "object", "required": ["at", "stream", "text"], "additionalProperties": false, "properties": {"at": {"type": "string"}, "stream": {"enum": ["stdout", "stderr"]}, "text": {"type": "string"}}},
-    "ContainerItem": {"type": "object", "required": ["kind", "id"], "additionalProperties": false, "properties": {"kind": {"enum": ["container", "volume", "image", "network"]}, "id": {"type": "string"}}},
-    "DecorationAction": {"type": "object", "required": ["id", "title"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "title": {"type": "string"}}},
-    "NoticeAction": {"type": "object", "required": ["id", "label"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "label": {"type": "string"}}},
-    "WaitCondition": {"oneOf": [{"type": "object", "required": ["kind", "id", "state"], "additionalProperties": false, "properties": {"kind": {"const": "container"}, "id": {"type": "string"}, "state": {"enum": ["running", "healthy"]}}}, {"type": "object", "required": ["kind", "id", "pattern"], "additionalProperties": false, "properties": {"kind": {"const": "log"}, "id": {"type": "string"}, "pattern": {"type": "string"}}}, {"type": "object", "required": ["kind", "id", "status"], "additionalProperties": false, "properties": {"kind": {"const": "run"}, "id": {"type": "string"}, "status": {"enum": ["running", "exited", "failed", "stopped"]}}}]}
+    "Project": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+    },
+    "Session": {
+      "type": "object",
+      "required": ["id", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "number": { "type": "integer" },
+        "title": { "type": "string" },
+        "status": { "enum": ["needs_input", "blocked", "working", "idle", "finished"] },
+        "branch": { "type": "string" },
+        "worktree": { "type": "string", "description": "Project relative path." },
+        "plan": {
+          "type": "object",
+          "required": ["id", "title"],
+          "additionalProperties": false,
+          "properties": { "id": { "type": "string" }, "title": { "type": "string" } }
+        }
+      }
+    },
+    "Worktree": {
+      "type": "object",
+      "required": ["path", "branch", "head", "isPrimary", "locked", "merged", "idleDays"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "description": "Project relative path." },
+        "branch": { "type": "string" },
+        "head": { "type": "string" },
+        "isPrimary": { "type": "boolean" },
+        "locked": { "type": "boolean" },
+        "merged": { "type": "boolean" },
+        "idleDays": { "type": "integer" },
+        "sessionId": { "type": "string" }
+      }
+    },
+    "RunService": {
+      "type": "object",
+      "required": ["id", "name", "kind", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "enum": ["compose", "package", "make", "procfile", "runner"] },
+        "source": {
+          "type": "object",
+          "required": ["file"],
+          "additionalProperties": false,
+          "properties": { "file": { "type": "string" }, "line": { "type": "integer" } }
+        },
+        "composeFile": { "type": "string" },
+        "composeService": { "type": "string" },
+        "command": { "type": "string" }
+      }
+    },
+    "RunInstance": {
+      "type": "object",
+      "required": ["id", "serviceId", "status", "ports", "startedAt", "origin"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "worktree": { "type": "string" },
+        "status": { "enum": ["starting", "running", "exited", "failed", "stopped"] },
+        "exitCode": { "type": "integer" },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["host"],
+            "additionalProperties": false,
+            "properties": { "declared": { "type": "integer" }, "host": { "type": "integer" } }
+          }
+        },
+        "composeProject": { "type": "string" },
+        "startedAt": { "type": "string" },
+        "origin": { "enum": ["jensen", "outside"] }
+      }
+    },
+    "ContainerEngine": { "enum": ["docker", "sandbox"] },
+    "ContainerTie": {
+      "enum": ["run", "compose_project", "working_dir", "bind_mount"],
+      "description": "Why Jensen tied the object to the open project."
+    },
+    "Container": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "engine",
+        "tiedBy",
+        "image",
+        "state",
+        "oomKilled",
+        "restartCount",
+        "ports",
+        "mounts",
+        "labels",
+        "createdAt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "engine": { "$ref": "#/$defs/ContainerEngine" },
+        "tiedBy": { "$ref": "#/$defs/ContainerTie" },
+        "composeProject": { "type": "string" },
+        "composeService": { "type": "string" },
+        "workingDir": { "type": "string" },
+        "image": { "type": "string" },
+        "state": { "enum": ["created", "running", "restarting", "exited", "dead", "paused"] },
+        "health": { "enum": ["starting", "healthy", "unhealthy"] },
+        "exitCode": { "type": "integer" },
+        "oomKilled": { "type": "boolean" },
+        "restartCount": { "type": "integer" },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["host", "container", "protocol"],
+            "additionalProperties": false,
+            "properties": {
+              "hostIp": { "type": "string" },
+              "host": { "type": "integer" },
+              "container": { "type": "integer" },
+              "protocol": { "type": "string" }
+            }
+          }
+        },
+        "mounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "target", "readOnly"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "type": "string" },
+              "source": { "type": "string" },
+              "target": { "type": "string" },
+              "readOnly": { "type": "boolean" }
+            }
+          }
+        },
+        "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+        "createdAt": { "type": "string" },
+        "startedAt": { "type": "string" },
+        "finishedAt": { "type": "string" }
+      }
+    },
+    "ContainerVolume": {
+      "type": "object",
+      "required": ["name", "engine", "tiedBy", "inUseBy"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "engine": { "$ref": "#/$defs/ContainerEngine" },
+        "tiedBy": { "$ref": "#/$defs/ContainerTie" },
+        "composeProject": { "type": "string" },
+        "sizeBytes": { "type": "integer" },
+        "inUseBy": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ContainerImage": {
+      "type": "object",
+      "required": ["id", "engine", "tiedBy", "inUseBy"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "engine": { "$ref": "#/$defs/ContainerEngine" },
+        "tiedBy": { "$ref": "#/$defs/ContainerTie" },
+        "composeProject": { "type": "string" },
+        "sizeBytes": { "type": "integer" },
+        "inUseBy": { "type": "array", "items": { "type": "string" } },
+        "name": { "type": "string" }
+      }
+    },
+    "ContainerNetwork": {
+      "type": "object",
+      "required": ["name", "engine", "tiedBy", "inUseBy"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "engine": { "$ref": "#/$defs/ContainerEngine" },
+        "tiedBy": { "$ref": "#/$defs/ContainerTie" },
+        "composeProject": { "type": "string" },
+        "sizeBytes": { "type": "integer" },
+        "inUseBy": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "LogLine": {
+      "type": "object",
+      "required": ["at", "stream", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "at": { "type": "string" },
+        "stream": { "enum": ["stdout", "stderr"] },
+        "text": { "type": "string" }
+      }
+    },
+    "ContainerItem": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["container", "volume", "image", "network"] },
+        "id": { "type": "string" }
+      }
+    },
+    "DecorationAction": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "title": { "type": "string" } }
+    },
+    "NoticeAction": {
+      "type": "object",
+      "required": ["id", "label"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "label": { "type": "string" } }
+    },
+    "WaitCondition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "id", "state"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "container" },
+            "id": { "type": "string" },
+            "state": { "enum": ["running", "healthy"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "id", "pattern"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "log" },
+            "id": { "type": "string" },
+            "pattern": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "id", "status"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "run" },
+            "id": { "type": "string" },
+            "status": { "enum": ["running", "exited", "failed", "stopped"] }
+          }
+        }
+      ]
+    }
   },
   "methods": {
     "plugin.hello": {
       "summary": "The first call a plugin makes. Jensen answers with who it is running as.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["apiVersion"], "additionalProperties": false, "properties": { "apiVersion": { "type": "integer" } } },
+      "params": {
+        "type": "object",
+        "required": ["apiVersion"],
+        "additionalProperties": false,
+        "properties": { "apiVersion": { "type": "integer" } }
+      },
       "result": {
         "type": "object",
         "required": ["pluginId", "appVersion", "surface", "theme"],
@@ -331,21 +1040,38 @@
       "summary": "Writes to Jensen's app log under the plugin's name.",
       "capability": "none",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["level", "text"], "additionalProperties": false, "properties": { "level": { "enum": ["info", "warn", "error"] }, "text": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["level", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "level": { "enum": ["info", "warn", "error"] },
+          "text": { "type": "string" }
+        }
+      },
       "result": { "type": "null" }
     },
     "storage.load": {
       "summary": "Reads the plugin's own persisted data. Null before the first save.",
       "capability": "none",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {"scope": {"enum": ["global", "project"]}}},
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "scope": { "enum": ["global", "project"] } }
+      },
       "result": {}
     },
     "storage.save": {
       "summary": "Replaces the plugin's own persisted data.",
       "capability": "none",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["data"], "additionalProperties": false, "properties": { "data": {}, "scope": { "enum": ["global", "project"] } } },
+      "params": {
+        "type": "object",
+        "required": ["data"],
+        "additionalProperties": false,
+        "properties": { "data": {}, "scope": { "enum": ["global", "project"] } }
+      },
       "result": { "type": "null" }
     },
     "workspace.currentPage": {
@@ -368,7 +1094,10 @@
           "title": { "type": "string" },
           "icon": { "type": "string", "description": "A Lucide icon name." },
           "singleton": { "type": "boolean" },
-          "render": { "enum": ["declarative", "custom"], "description": "declarative: the plugin returns a node tree Jensen draws with its own components. custom: the plugin's bundle runs again inside a sandboxed frame and draws itself." }
+          "render": {
+            "enum": ["declarative", "custom"],
+            "description": "declarative: the plugin returns a node tree Jensen draws with its own components. custom: the plugin's bundle runs again inside a sandboxed frame and draws itself."
+          }
         }
       },
       "result": { "type": "null" }
@@ -376,7 +1105,12 @@
     "workspace.unregisterPane": {
       "capability": "workspace",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "workspace.openPane": {
@@ -394,18 +1128,33 @@
           "focus": { "type": "boolean" }
         }
       },
-      "result": { "type": "object", "required": ["instanceId"], "additionalProperties": false, "properties": { "instanceId": { "type": "string" } } }
+      "result": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      }
     },
     "workspace.closePane": {
       "capability": "workspace",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["instanceId"], "additionalProperties": false, "properties": { "instanceId": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "workspace.focusPane": {
       "capability": "workspace",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["instanceId"], "additionalProperties": false, "properties": { "instanceId": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "workspace.movePane": {
@@ -433,164 +1182,313 @@
       "summary": "Stores state with the pane so it survives a reload, then re-renders it.",
       "capability": "workspace",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["instanceId", "state"], "additionalProperties": false, "properties": { "instanceId": { "type": "string" }, "state": {} } },
+      "params": {
+        "type": "object",
+        "required": ["instanceId", "state"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" }, "state": {} }
+      },
       "result": { "type": "null" }
     },
     "sessions.list": {
       "summary": "Lists the project's sessions with the status the session cards show.",
       "capability": "sessions",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/Session"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/Session" } }
     },
     "worktrees.list": {
       "summary": "Lists the project's worktrees and the session that owns each.",
       "capability": "sessions",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/Worktree"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/Worktree" } }
     },
     "sessions.setChip": {
       "summary": "Puts a short chip on a session's card, replacing the plugin's previous chip there.",
       "capability": "sessions",
       "handler": "frontend",
-      "params": {"type": "object", "required": ["sessionId", "text"], "additionalProperties": false, "properties": {"sessionId": {"type": "string"}, "text": {"type": "string"}, "tone": {"$ref": "#/$defs/Tone"}, "tooltip": {"type": "string"}}},
-      "result": {"type": "null"}
+      "params": {
+        "type": "object",
+        "required": ["sessionId", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": { "type": "string" },
+          "text": { "type": "string" },
+          "tone": { "$ref": "#/$defs/Tone" },
+          "tooltip": { "type": "string" }
+        }
+      },
+      "result": { "type": "null" }
     },
     "sessions.clearChip": {
       "capability": "sessions",
       "handler": "frontend",
-      "params": {"type": "object", "required": ["sessionId"], "additionalProperties": false, "properties": {"sessionId": {"type": "string"}}},
-      "result": {"type": "null"}
+      "params": {
+        "type": "object",
+        "required": ["sessionId"],
+        "additionalProperties": false,
+        "properties": { "sessionId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
     },
     "sessions.open": {
       "summary": "Focuses the session's pane.",
       "capability": "sessions",
       "handler": "frontend",
-      "params": {"type": "object", "required": ["sessionId"], "additionalProperties": false, "properties": {"sessionId": {"type": "string"}}},
-      "result": {"type": "null"}
+      "params": {
+        "type": "object",
+        "required": ["sessionId"],
+        "additionalProperties": false,
+        "properties": { "sessionId": { "type": "string" } }
+      },
+      "result": { "type": "null" }
     },
     "sessions.sendContext": {
       "summary": "Hands text to a session. Jensen shows it and asks the person before delivering it.",
       "capability": "sessions",
       "handler": "frontend",
-      "params": {"type": "object", "required": ["sessionId", "text"], "additionalProperties": false, "properties": {"sessionId": {"type": "string"}, "text": {"type": "string"}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["sessionId", "text"],
+        "additionalProperties": false,
+        "properties": { "sessionId": { "type": "string" }, "text": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": { "confirmed": { "type": "boolean" } }
+      }
     },
     "run.services": {
       "summary": "Lists the services Run detects, with the person's corrections applied.",
       "capability": "run:read",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/RunService"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/RunService" } }
     },
     "run.list": {
       "summary": "Lists Run's instances, including those started outside Jensen.",
       "capability": "run:read",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/RunInstance"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/RunInstance" } }
     },
     "run.start": {
       "summary": "Starts a service through Run. Jensen asks the person to confirm.",
       "capability": "run:control",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["serviceId"], "additionalProperties": false, "properties": {"serviceId": {"type": "string"}, "sessionId": {"type": "string"}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["serviceId"],
+        "additionalProperties": false,
+        "properties": { "serviceId": { "type": "string" }, "sessionId": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": { "confirmed": { "type": "boolean" } }
+      }
     },
     "run.stop": {
       "summary": "Stops a service through Run. Jensen asks the person to confirm.",
       "capability": "run:control",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["serviceId"], "additionalProperties": false, "properties": {"serviceId": {"type": "string"}, "sessionId": {"type": "string"}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["serviceId"],
+        "additionalProperties": false,
+        "properties": { "serviceId": { "type": "string" }, "sessionId": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": { "confirmed": { "type": "boolean" } }
+      }
     },
     "run.restart": {
       "summary": "Restarts a service through Run. Jensen asks the person to confirm.",
       "capability": "run:control",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["serviceId"], "additionalProperties": false, "properties": {"serviceId": {"type": "string"}, "sessionId": {"type": "string"}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["serviceId"],
+        "additionalProperties": false,
+        "properties": { "serviceId": { "type": "string" }, "sessionId": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": { "confirmed": { "type": "boolean" } }
+      }
     },
     "run.removeOwn": {
       "summary": "Backend only. Removes the calling session's own Compose project without a prompt, and is refused when there is no calling session.",
       "capability": "run:control",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "object", "required": ["removed"], "additionalProperties": false, "properties": {"removed": {"type": "boolean"}}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": {
+        "type": "object",
+        "required": ["removed"],
+        "additionalProperties": false,
+        "properties": { "removed": { "type": "boolean" } }
+      }
     },
     "containers.list": {
       "summary": "Lists the containers tied to the open project, from Docker and the sandbox. Never returns environment values.",
       "capability": "containers:read",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/Container"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/Container" } }
     },
     "containers.volumes": {
       "capability": "containers:read",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/ContainerVolume"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/ContainerVolume" } }
     },
     "containers.images": {
       "capability": "containers:read",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/ContainerImage"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/ContainerImage" } }
     },
     "containers.networks": {
       "capability": "containers:read",
       "handler": "kernel",
-      "params": {"type": "object", "additionalProperties": false, "properties": {}},
-      "result": {"type": "array", "items": {"$ref": "#/$defs/ContainerNetwork"}}
+      "params": { "type": "object", "additionalProperties": false, "properties": {} },
+      "result": { "type": "array", "items": { "$ref": "#/$defs/ContainerNetwork" } }
     },
     "containers.logs": {
       "summary": "Reads a container's logs a page at a time. Logs may hold sensitive data.",
       "capability": "containers:read",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["id"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "since": {"type": "string"}, "until": {"type": "string"}, "tail": {"type": "integer"}, "cursor": {"type": "string"}}},
-      "result": {"type": "object", "required": ["lines"], "additionalProperties": false, "properties": {"lines": {"type": "array", "items": {"$ref": "#/$defs/LogLine"}}, "cursor": {"type": "string"}}}
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "since": { "type": "string" },
+          "until": { "type": "string" },
+          "tail": { "type": "integer" },
+          "cursor": { "type": "string" }
+        }
+      },
+      "result": {
+        "type": "object",
+        "required": ["lines"],
+        "additionalProperties": false,
+        "properties": {
+          "lines": { "type": "array", "items": { "$ref": "#/$defs/LogLine" } },
+          "cursor": { "type": "string" }
+        }
+      }
     },
     "containers.stop": {
       "summary": "Stops a container Jensen did not start. Jensen asks the person to confirm.",
       "capability": "containers:control",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["id"], "additionalProperties": false, "properties": {"id": {"type": "string"}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": { "confirmed": { "type": "boolean" } }
+      }
     },
     "containers.restart": {
       "summary": "Restarts a container Jensen did not start. Jensen asks the person to confirm.",
       "capability": "containers:control",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["id"], "additionalProperties": false, "properties": {"id": {"type": "string"}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": { "confirmed": { "type": "boolean" } }
+      }
     },
     "containers.remove": {
       "summary": "Removes leftovers. Jensen lists them with sizes, asks the person to confirm, and refuses anything running or not tied to the project.",
       "capability": "containers:control",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["items"], "additionalProperties": false, "properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/ContainerItem"}}}},
-      "result": {"type": "object", "required": ["confirmed"], "additionalProperties": false, "properties": {"confirmed": {"type": "boolean"}, "removed": {"type": "array", "items": {"$ref": "#/$defs/ContainerItem"}}}}
+      "params": {
+        "type": "object",
+        "required": ["items"],
+        "additionalProperties": false,
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/$defs/ContainerItem" } } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["confirmed"],
+        "additionalProperties": false,
+        "properties": {
+          "confirmed": { "type": "boolean" },
+          "removed": { "type": "array", "items": { "$ref": "#/$defs/ContainerItem" } }
+        }
+      }
     },
     "wait.until": {
       "summary": "Waits in the host until a container, log line or run reaches a state, or the timeout passes. Each condition needs the capability that reads what it watches.",
       "capability": "none",
       "handler": "kernel",
-      "params": {"type": "object", "required": ["condition"], "additionalProperties": false, "properties": {"condition": {"$ref": "#/$defs/WaitCondition"}, "timeoutMs": {"type": "integer"}}},
-      "result": {"type": "object", "required": ["met"], "additionalProperties": false, "properties": {"met": {"type": "boolean"}}}
+      "params": {
+        "type": "object",
+        "required": ["condition"],
+        "additionalProperties": false,
+        "properties": {
+          "condition": { "$ref": "#/$defs/WaitCondition" },
+          "timeoutMs": { "type": "integer" }
+        }
+      },
+      "result": {
+        "type": "object",
+        "required": ["met"],
+        "additionalProperties": false,
+        "properties": { "met": { "type": "boolean" } }
+      }
     },
     "workspace.setPaneBadge": {
       "summary": "Puts a badge on a pane's tab. Sending neither count nor text clears it.",
       "capability": "workspace",
       "handler": "frontend",
-      "params": {"type": "object", "required": ["paneId"], "additionalProperties": false, "properties": {"paneId": {"type": "string"}, "count": {"type": "integer"}, "text": {"type": "string"}, "tone": {"$ref": "#/$defs/Tone"}}},
-      "result": {"type": "null"}
+      "params": {
+        "type": "object",
+        "required": ["paneId"],
+        "additionalProperties": false,
+        "properties": {
+          "paneId": { "type": "string" },
+          "count": { "type": "integer" },
+          "text": { "type": "string" },
+          "tone": { "$ref": "#/$defs/Tone" }
+        }
+      },
+      "result": { "type": "null" }
     },
     "workspace.refreshPane": {
       "summary": "Asks Jensen to call pane.render again. Without an instance it refreshes every pane the plugin owns.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "additionalProperties": false, "properties": { "instanceId": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "commands.register": {
@@ -608,7 +1506,10 @@
           "category": { "type": "string" },
           "hotkey": { "$ref": "#/$defs/Hotkey" },
           "when": { "type": "string" },
-          "checked": { "type": "boolean", "description": "True when the plugin answers command.check to decide availability." }
+          "checked": {
+            "type": "boolean",
+            "description": "True when the plugin answers command.check to decide availability."
+          }
         }
       },
       "result": { "type": "null" }
@@ -616,59 +1517,115 @@
     "commands.unregister": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "commands.execute": {
       "summary": "Runs any command, including Jensen's own. Plugin command ids are plugin:<pluginId>/<id>.",
       "capability": "workspace",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "args": {} } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "args": {} }
+      },
       "result": { "type": "null" }
     },
     "commands.list": {
       "capability": "workspace",
       "handler": "frontend",
       "params": { "type": "object", "additionalProperties": false, "properties": {} },
-      "result": { "type": "array", "items": { "type": "object", "required": ["id", "name"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "category": { "type": "string" } } } }
+      "result": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "category": { "type": "string" }
+          }
+        }
+      }
     },
     "keymap.get": {
       "summary": "The chords currently bound to a command, after the user's own overrides.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["commandId"], "additionalProperties": false, "properties": { "commandId": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["commandId"],
+        "additionalProperties": false,
+        "properties": { "commandId": { "type": "string" } }
+      },
       "result": { "type": "array", "items": { "type": "string" } }
     },
     "settings.registerTab": {
       "summary": "Adds a section to Settings under Extensions. Jensen asks for its controls with settings.render and draws them with its own components.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id", "title"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "title": { "type": "string" }, "icon": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "icon": { "type": "string" }
+        }
+      },
       "result": { "type": "null" }
     },
     "settings.unregisterTab": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "settings.refreshTab": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "settings.get": {
       "summary": "Reads one of Jensen's own settings.",
       "capability": "settings",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["key"], "additionalProperties": false, "properties": { "key": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["key"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" } }
+      },
       "result": {}
     },
     "settings.set": {
       "capability": "settings",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["key", "value"], "additionalProperties": false, "properties": { "key": { "type": "string" }, "value": {} } },
+      "params": {
+        "type": "object",
+        "required": ["key", "value"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" }, "value": {} }
+      },
       "result": { "type": "null" }
     },
     "theme.get": {
@@ -686,20 +1643,35 @@
     "theme.set": {
       "capability": "theme",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "theme.register": {
       "summary": "Adds a theme document, validated against schema/theme.schema.json.",
       "capability": "theme",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["document"], "additionalProperties": false, "properties": { "document": { "type": "object" } } },
+      "params": {
+        "type": "object",
+        "required": ["document"],
+        "additionalProperties": false,
+        "properties": { "document": { "type": "object" } }
+      },
       "result": { "type": "null" }
     },
     "theme.unregister": {
       "capability": "theme",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "editor.active": {
@@ -711,314 +1683,755 @@
     "editor.getText": {
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "additionalProperties": false, "properties": { "path": { "type": "string", "description": "Defaults to the active editor." } } },
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string", "description": "Defaults to the active editor." }
+        }
+      },
       "result": { "type": "string" }
     },
     "editor.getSelection": {
       "capability": "editor:read",
       "handler": "frontend",
       "params": { "type": "object", "additionalProperties": false, "properties": {} },
-      "result": { "type": "object", "required": ["text", "from", "to"], "additionalProperties": false, "properties": { "text": { "type": "string" }, "from": { "$ref": "#/$defs/Position" }, "to": { "$ref": "#/$defs/Position" } } }
+      "result": {
+        "type": "object",
+        "required": ["text", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" },
+          "from": { "$ref": "#/$defs/Position" },
+          "to": { "$ref": "#/$defs/Position" }
+        }
+      }
     },
     "editor.openFile": {
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" }, "line": { "type": "integer" }, "column": { "type": "integer" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "line": { "type": "integer" },
+          "column": { "type": "integer" }
+        }
+      },
       "result": { "type": "null" }
     },
     "editor.retarget": {
       "summary": "Moves an open tab to another path, for example after a plugin converted the file to a new format.",
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["from", "to"], "additionalProperties": false, "properties": { "from": { "type": "string" }, "to": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "editor.replaceRange": {
       "summary": "Edits the active buffer as one undoable transaction labelled with the plugin id.",
       "capability": "editor:write",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["from", "to", "text"], "additionalProperties": false, "properties": { "from": { "type": "integer" }, "to": { "type": "integer" }, "text": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["from", "to", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "integer" },
+          "to": { "type": "integer" },
+          "text": { "type": "string" }
+        }
+      },
       "result": { "type": "null" }
     },
     "editor.replaceSelection": {
       "capability": "editor:write",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["text"], "additionalProperties": false, "properties": { "text": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": { "text": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "editor.insert": {
       "summary": "Inserts at an offset, or at the cursor when none is given.",
       "capability": "editor:write",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["text"], "additionalProperties": false, "properties": { "text": { "type": "string" }, "at": { "type": "integer" } } },
+      "params": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": { "text": { "type": "string" }, "at": { "type": "integer" } }
+      },
       "result": { "type": "null" }
     },
     "editor.save": {
       "capability": "editor:write",
       "handler": "frontend",
-      "params": { "type": "object", "additionalProperties": false, "properties": { "path": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "editor.setDecorations": {
       "summary": "Replaces the plugin's decorations under a key. They are visual only and cannot change the buffer, so reading is enough.",
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["key", "path", "decorations"], "additionalProperties": false, "properties": { "key": { "type": "string" }, "path": { "type": "string" }, "decorations": { "type": "array", "items": { "$ref": "#/$defs/Decoration" } } } },
+      "params": {
+        "type": "object",
+        "required": ["key", "path", "decorations"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "path": { "type": "string" },
+          "decorations": { "type": "array", "items": { "$ref": "#/$defs/Decoration" } }
+        }
+      },
       "result": { "type": "null" }
     },
     "editor.clearDecorations": {
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["key"], "additionalProperties": false, "properties": { "key": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["key"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "fs.read": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
       "result": { "type": "string" }
     },
     "fs.write": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path", "contents"], "additionalProperties": false, "properties": { "path": { "type": "string" }, "contents": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path", "contents"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "contents": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "fs.readBytes": {
       "summary": "Reads a file as base64, for binary formats.",
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
       "result": { "type": "string" }
     },
     "fs.writeBytes": {
       "summary": "Writes base64 decoded bytes to a file, creating parent directories. Open image tabs on the path refresh.",
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path", "data"], "additionalProperties": false, "properties": { "path": { "type": "string" }, "data": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path", "data"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "data": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "backend.call": {
       "summary": "Calls a method of the plugin's WebAssembly backend. The backend reads and writes files inside the plugin's fs grant; touched lists the paths it wrote.",
       "capability": "backend",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["method"], "additionalProperties": false, "properties": { "method": { "type": "string" }, "input": {} } },
-      "result": { "type": "object", "required": ["result", "touched"], "additionalProperties": false, "properties": { "result": {}, "touched": { "type": "array", "items": { "type": "string" } } } }
+      "params": {
+        "type": "object",
+        "required": ["method"],
+        "additionalProperties": false,
+        "properties": { "method": { "type": "string" }, "input": {} }
+      },
+      "result": {
+        "type": "object",
+        "required": ["result", "touched"],
+        "additionalProperties": false,
+        "properties": {
+          "result": {},
+          "touched": { "type": "array", "items": { "type": "string" } }
+        }
+      }
     },
     "viewer.registerToolbar": {
       "summary": "Contributes a toolbar to file viewers, such as the image page, for files matching kinds or extensions. Jensen asks for its nodes with viewer.render and passes the path of the file shown, so it needs the same editor read access as editor.activeChanged.",
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "kinds": { "type": "array", "items": { "type": "string" } }, "extensions": { "type": "array", "items": { "type": "string" } } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "kinds": { "type": "array", "items": { "type": "string" } },
+          "extensions": { "type": "array", "items": { "type": "string" } }
+        }
+      },
       "result": { "type": "null" }
     },
     "viewer.unregisterToolbar": {
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "viewer.refreshToolbar": {
       "summary": "Asks Jensen to call viewer.render again.",
       "capability": "editor:read",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "fs.list": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
       "result": { "type": "array", "items": { "$ref": "#/$defs/DirEntry" } }
     },
     "fs.stat": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
       "result": { "oneOf": [{ "$ref": "#/$defs/FileStat" }, { "type": "null" }] }
     },
     "fs.mkdir": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "fs.delete": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" }, "recursive": { "type": "boolean" } } },
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" }, "recursive": { "type": "boolean" } }
+      },
       "result": { "type": "null" }
     },
     "fs.rename": {
       "capability": "fs",
       "handler": "kernel",
-      "params": { "type": "object", "required": ["from", "to"], "additionalProperties": false, "properties": { "from": { "type": "string" }, "to": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "fs.watch": {
       "summary": "Starts delivering fs.changed events for a granted directory.",
       "capability": "fs",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } },
-      "result": { "type": "object", "required": ["watchId"], "additionalProperties": false, "properties": { "watchId": { "type": "string" } } }
+      "params": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["watchId"],
+        "additionalProperties": false,
+        "properties": { "watchId": { "type": "string" } }
+      }
     },
     "fs.unwatch": {
       "capability": "fs",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["watchId"], "additionalProperties": false, "properties": { "watchId": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["watchId"],
+        "additionalProperties": false,
+        "properties": { "watchId": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "ui.notice": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["message"], "additionalProperties": false, "properties": { "message": { "type": "string" }, "severity": { "$ref": "#/$defs/Severity" }, "timeoutMs": { "type": "integer" }, "actions": { "type": "array", "items": { "$ref": "#/$defs/NoticeAction" } } } },
+      "params": {
+        "type": "object",
+        "required": ["message"],
+        "additionalProperties": false,
+        "properties": {
+          "message": { "type": "string" },
+          "severity": { "$ref": "#/$defs/Severity" },
+          "timeoutMs": { "type": "integer" },
+          "actions": { "type": "array", "items": { "$ref": "#/$defs/NoticeAction" } }
+        }
+      },
       "result": { "type": ["string", "null"] }
     },
     "ui.confirm": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["title", "message"], "additionalProperties": false, "properties": { "title": { "type": "string" }, "message": { "type": "string" }, "confirmLabel": { "type": "string" }, "danger": { "type": "boolean" } } },
+      "params": {
+        "type": "object",
+        "required": ["title", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "confirmLabel": { "type": "string" },
+          "danger": { "type": "boolean" }
+        }
+      },
       "result": { "type": "boolean" }
     },
     "ui.choose": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["title", "message", "choices"], "additionalProperties": false, "properties": { "title": { "type": "string" }, "message": { "type": "string" }, "choices": { "type": "array", "items": { "type": "object", "required": ["id", "label"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "label": { "type": "string" } } } } } },
+      "params": {
+        "type": "object",
+        "required": ["title", "message", "choices"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "additionalProperties": false,
+              "properties": { "id": { "type": "string" }, "label": { "type": "string" } }
+            }
+          }
+        }
+      },
       "result": { "type": ["string", "null"] }
     },
     "ui.prompt": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["title"], "additionalProperties": false, "properties": { "title": { "type": "string" }, "message": { "type": "string" }, "placeholder": { "type": "string" }, "initial": { "type": "string" }, "confirmLabel": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["title"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "placeholder": { "type": "string" },
+          "initial": { "type": "string" },
+          "confirmLabel": { "type": "string" }
+        }
+      },
       "result": { "type": ["string", "null"] }
     },
     "ui.suggest": {
       "summary": "A searchable list. Resolves to the picked item id, or null when dismissed.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["title", "items"], "additionalProperties": false, "properties": { "title": { "type": "string" }, "placeholder": { "type": "string" }, "items": { "type": "array", "items": { "type": "object", "required": ["id", "label"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "label": { "type": "string" }, "detail": { "type": "string" }, "icon": { "type": "string" } } } } } },
+      "params": {
+        "type": "object",
+        "required": ["title", "items"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "placeholder": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "detail": { "type": "string" },
+                "icon": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
       "result": { "type": ["string", "null"] }
     },
     "ui.registerMenu": {
       "summary": "Contributes items to a context menu. Jensen asks for them with menu.build each time the menu opens.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id", "target"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "target": { "enum": ["explorer", "editor", "pane", "tab"] } } },
+      "params": {
+        "type": "object",
+        "required": ["id", "target"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "target": { "enum": ["explorer", "editor", "pane", "tab"] }
+        }
+      },
       "result": { "type": "null" }
     },
     "ui.unregisterMenu": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "ui.setStatus": {
       "summary": "Creates or updates an item in the status strip.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "icon": { "type": "string" }, "tooltip": { "type": "string" }, "tone": { "$ref": "#/$defs/Tone" }, "clickable": { "type": "boolean" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "icon": { "type": "string" },
+          "tooltip": { "type": "string" },
+          "tone": { "$ref": "#/$defs/Tone" },
+          "clickable": { "type": "boolean" }
+        }
+      },
       "result": { "type": "null" }
     },
     "ui.removeStatus": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "markdown.registerRenderer": {
       "summary": "Renders fenced code blocks of one language. Jensen asks for html with markdown.render and sanitizes what comes back.",
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id", "language"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "language": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id", "language"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "language": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "markdown.unregisterRenderer": {
       "capability": "none",
       "handler": "frontend",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
-    "graph.explainService": { "capability": "graph", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "graph.dependencies": { "capability": "graph", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "graph.impact": { "capability": "graph", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "graph.query": { "capability": "graph", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "knowledge.search": { "capability": "knowledge", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "knowledge.ingest": { "capability": "knowledge", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "git.history": { "capability": "git", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "git.semanticDiff": { "capability": "git", "handler": "kernel", "params": { "type": "object" }, "result": {} },
-    "net.fetch": { "capability": "network", "handler": "kernel", "params": { "type": "object", "required": ["host", "path"], "properties": { "host": { "type": "string" }, "path": { "type": "string" } } }, "result": {} }
+    "graph.explainService": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "graph.dependencies": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "graph.impact": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "graph.query": {
+      "capability": "graph",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "knowledge.search": {
+      "capability": "knowledge",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "knowledge.ingest": {
+      "capability": "knowledge",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "git.history": {
+      "capability": "git",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "git.semanticDiff": {
+      "capability": "git",
+      "handler": "kernel",
+      "params": { "type": "object" },
+      "result": {}
+    },
+    "net.fetch": {
+      "capability": "network",
+      "handler": "kernel",
+      "params": {
+        "type": "object",
+        "required": ["host", "path"],
+        "properties": { "host": { "type": "string" }, "path": { "type": "string" } }
+      },
+      "result": {}
+    }
   },
   "callbacks": {
     "command.run": {
       "summary": "A command the plugin registered was invoked.",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "args": {} } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "args": {} }
+      },
       "result": { "type": "null" }
     },
     "command.check": {
       "summary": "Whether the command is available right now, so the palette can hide it.",
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "boolean" }
     },
     "pane.open": {
-      "params": { "type": "object", "required": ["paneId", "instanceId", "state"], "additionalProperties": false, "properties": { "paneId": { "type": "string" }, "instanceId": { "type": "string" }, "state": {} } },
+      "params": {
+        "type": "object",
+        "required": ["paneId", "instanceId", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "paneId": { "type": "string" },
+          "instanceId": { "type": "string" },
+          "state": {}
+        }
+      },
       "result": { "type": "null" }
     },
     "pane.close": {
-      "params": { "type": "object", "required": ["paneId", "instanceId"], "additionalProperties": false, "properties": { "paneId": { "type": "string" }, "instanceId": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["paneId", "instanceId"],
+        "additionalProperties": false,
+        "properties": { "paneId": { "type": "string" }, "instanceId": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "pane.render": {
       "summary": "Asks a declarative pane for its node tree.",
-      "params": { "type": "object", "required": ["paneId", "instanceId", "state"], "additionalProperties": false, "properties": { "paneId": { "type": "string" }, "instanceId": { "type": "string" }, "state": {} } },
-      "result": { "type": "object", "required": ["children"], "additionalProperties": false, "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } } }
+      "params": {
+        "type": "object",
+        "required": ["paneId", "instanceId", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "paneId": { "type": "string" },
+          "instanceId": { "type": "string" },
+          "state": {}
+        }
+      },
+      "result": {
+        "type": "object",
+        "required": ["children"],
+        "additionalProperties": false,
+        "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } }
+      }
     },
     "node.event": {
       "summary": "A control inside a rendered node tree fired its handler.",
-      "params": { "type": "object", "required": ["handler"], "additionalProperties": false, "properties": { "handler": { "type": "string" }, "payload": {} } },
+      "params": {
+        "type": "object",
+        "required": ["handler"],
+        "additionalProperties": false,
+        "properties": { "handler": { "type": "string" }, "payload": {} }
+      },
       "result": { "type": "null" }
     },
     "settings.render": {
-      "params": { "type": "object", "required": ["tabId"], "additionalProperties": false, "properties": { "tabId": { "type": "string" } } },
-      "result": { "type": "object", "required": ["controls"], "additionalProperties": false, "properties": { "controls": { "type": "array", "items": { "$ref": "#/$defs/SettingControl" } } } }
+      "params": {
+        "type": "object",
+        "required": ["tabId"],
+        "additionalProperties": false,
+        "properties": { "tabId": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["controls"],
+        "additionalProperties": false,
+        "properties": {
+          "controls": { "type": "array", "items": { "$ref": "#/$defs/SettingControl" } }
+        }
+      }
     },
     "settings.change": {
-      "params": { "type": "object", "required": ["tabId", "key", "value"], "additionalProperties": false, "properties": { "tabId": { "type": "string" }, "key": { "type": "string" }, "value": {} } },
+      "params": {
+        "type": "object",
+        "required": ["tabId", "key", "value"],
+        "additionalProperties": false,
+        "properties": { "tabId": { "type": "string" }, "key": { "type": "string" }, "value": {} }
+      },
       "result": { "type": "null" }
     },
     "settings.action": {
-      "params": { "type": "object", "required": ["tabId", "key"], "additionalProperties": false, "properties": { "tabId": { "type": "string" }, "key": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["tabId", "key"],
+        "additionalProperties": false,
+        "properties": { "tabId": { "type": "string" }, "key": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "menu.build": {
-      "params": { "type": "object", "required": ["menuId", "context"], "additionalProperties": false, "properties": { "menuId": { "type": "string" }, "context": { "type": "object", "description": "What the menu opened on: path for explorer, tab or editor, paneKind for pane." } } },
+      "params": {
+        "type": "object",
+        "required": ["menuId", "context"],
+        "additionalProperties": false,
+        "properties": {
+          "menuId": { "type": "string" },
+          "context": {
+            "type": "object",
+            "description": "What the menu opened on: path for explorer, tab or editor, paneKind for pane."
+          }
+        }
+      },
       "result": { "type": "array", "items": { "$ref": "#/$defs/MenuItem" } }
     },
     "menu.select": {
-      "params": { "type": "object", "required": ["menuId", "itemId", "context"], "additionalProperties": false, "properties": { "menuId": { "type": "string" }, "itemId": { "type": "string" }, "context": { "type": "object" } } },
+      "params": {
+        "type": "object",
+        "required": ["menuId", "itemId", "context"],
+        "additionalProperties": false,
+        "properties": {
+          "menuId": { "type": "string" },
+          "itemId": { "type": "string" },
+          "context": { "type": "object" }
+        }
+      },
       "result": { "type": "null" }
     },
     "viewer.render": {
       "summary": "Asks a viewer toolbar for its node tree for the file being shown.",
-      "params": { "type": "object", "required": ["toolbarId", "path"], "additionalProperties": false, "properties": { "toolbarId": { "type": "string" }, "path": { "type": "string" } } },
-      "result": { "type": "object", "required": ["children"], "additionalProperties": false, "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } } }
+      "params": {
+        "type": "object",
+        "required": ["toolbarId", "path"],
+        "additionalProperties": false,
+        "properties": { "toolbarId": { "type": "string" }, "path": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["children"],
+        "additionalProperties": false,
+        "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } }
+      }
     },
     "notice.action": {
       "summary": "A button on a notice the plugin showed was pressed.",
-      "params": {"type": "object", "required": ["noticeId", "actionId"], "additionalProperties": false, "properties": {"noticeId": {"type": "string"}, "actionId": {"type": "string"}}},
+      "params": {
+        "type": "object",
+        "required": ["noticeId", "actionId"],
+        "additionalProperties": false,
+        "properties": { "noticeId": { "type": "string" }, "actionId": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "decoration.action": {
       "summary": "The action on one of the plugin's decorations was chosen.",
-      "params": {"type": "object", "required": ["key", "path", "actionId"], "additionalProperties": false, "properties": {"key": {"type": "string"}, "path": {"type": "string"}, "actionId": {"type": "string"}}},
+      "params": {
+        "type": "object",
+        "required": ["key", "path", "actionId"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string" },
+          "path": { "type": "string" },
+          "actionId": { "type": "string" }
+        }
+      },
       "result": { "type": "null" }
     },
     "status.click": {
-      "params": { "type": "object", "required": ["id"], "additionalProperties": false, "properties": { "id": { "type": "string" } } },
+      "params": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      },
       "result": { "type": "null" }
     },
     "markdown.render": {
-      "params": { "type": "object", "required": ["id", "source"], "additionalProperties": false, "properties": { "id": { "type": "string" }, "source": { "type": "string" } } },
-      "result": { "type": "object", "required": ["html"], "additionalProperties": false, "properties": { "html": { "type": "string" } } }
+      "params": {
+        "type": "object",
+        "required": ["id", "source"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" }, "source": { "type": "string" } }
+      },
+      "result": {
+        "type": "object",
+        "required": ["html"],
+        "additionalProperties": false,
+        "properties": { "html": { "type": "string" } }
+      }
     },
     "plugin.unload": {
       "summary": "Jensen is disabling or reloading the plugin. Dispose everything and resolve.",
@@ -1027,25 +2440,185 @@
     }
   },
   "events": {
-    "workspace.paneOpened": { "capability": "workspace", "payload": { "$ref": "#/$defs/PaneInfo" } },
-    "workspace.paneClosed": { "capability": "workspace", "payload": { "type": "object", "required": ["instanceId"], "additionalProperties": false, "properties": { "instanceId": { "type": "string" } } } },
-    "workspace.activeChanged": { "capability": "workspace", "payload": { "oneOf": [{ "$ref": "#/$defs/PaneInfo" }, { "type": "null" }] } },
-    "workspace.layoutChanged": { "capability": "workspace", "payload": { "type": "object", "required": ["page", "panes"], "additionalProperties": false, "properties": { "page": { "enum": ["session", "code", "notes"] }, "panes": { "type": "array", "items": { "$ref": "#/$defs/PaneInfo" } } } } },
-    "editor.activeChanged": { "capability": "editor:read", "payload": { "oneOf": [{ "$ref": "#/$defs/ActiveEditor" }, { "type": "null" }] } },
-    "editor.changed": { "capability": "editor:read", "payload": { "type": "object", "required": ["path", "lineCount"], "additionalProperties": false, "properties": { "path": { "type": ["string", "null"] }, "lineCount": { "type": "integer" } } } },
-    "editor.selectionChanged": { "capability": "editor:read", "payload": { "type": "object", "required": ["path", "selection", "cursor"], "additionalProperties": false, "properties": { "path": { "type": ["string", "null"] }, "selection": { "$ref": "#/$defs/Range" }, "cursor": { "$ref": "#/$defs/Position" } } } },
-    "viewer.activeChanged": { "capability": "editor:read", "payload": { "oneOf": [{ "type": "object", "required": ["path", "kind"], "additionalProperties": false, "properties": { "path": { "type": "string" }, "kind": { "type": "string" } } }, { "type": "null" }] } },
-    "editor.saved": { "capability": "editor:read", "payload": { "type": "object", "required": ["path"], "additionalProperties": false, "properties": { "path": { "type": "string" } } } },
+    "workspace.paneOpened": {
+      "capability": "workspace",
+      "payload": { "$ref": "#/$defs/PaneInfo" }
+    },
+    "workspace.paneClosed": {
+      "capability": "workspace",
+      "payload": {
+        "type": "object",
+        "required": ["instanceId"],
+        "additionalProperties": false,
+        "properties": { "instanceId": { "type": "string" } }
+      }
+    },
+    "workspace.activeChanged": {
+      "capability": "workspace",
+      "payload": { "oneOf": [{ "$ref": "#/$defs/PaneInfo" }, { "type": "null" }] }
+    },
+    "workspace.layoutChanged": {
+      "capability": "workspace",
+      "payload": {
+        "type": "object",
+        "required": ["page", "panes"],
+        "additionalProperties": false,
+        "properties": {
+          "page": { "enum": ["session", "code", "notes"] },
+          "panes": { "type": "array", "items": { "$ref": "#/$defs/PaneInfo" } }
+        }
+      }
+    },
+    "editor.activeChanged": {
+      "capability": "editor:read",
+      "payload": { "oneOf": [{ "$ref": "#/$defs/ActiveEditor" }, { "type": "null" }] }
+    },
+    "editor.changed": {
+      "capability": "editor:read",
+      "payload": {
+        "type": "object",
+        "required": ["path", "lineCount"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": ["string", "null"] }, "lineCount": { "type": "integer" } }
+      }
+    },
+    "editor.selectionChanged": {
+      "capability": "editor:read",
+      "payload": {
+        "type": "object",
+        "required": ["path", "selection", "cursor"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": ["string", "null"] },
+          "selection": { "$ref": "#/$defs/Range" },
+          "cursor": { "$ref": "#/$defs/Position" }
+        }
+      }
+    },
+    "viewer.activeChanged": {
+      "capability": "editor:read",
+      "payload": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["path", "kind"],
+            "additionalProperties": false,
+            "properties": { "path": { "type": "string" }, "kind": { "type": "string" } }
+          },
+          { "type": "null" }
+        ]
+      }
+    },
+    "editor.saved": {
+      "capability": "editor:read",
+      "payload": {
+        "type": "object",
+        "required": ["path"],
+        "additionalProperties": false,
+        "properties": { "path": { "type": "string" } }
+      }
+    },
     "theme.changed": { "capability": "none", "payload": { "$ref": "#/$defs/ActiveTheme" } },
-    "fs.changed": { "capability": "fs", "payload": { "type": "object", "required": ["watchId", "kind", "path"], "additionalProperties": false, "properties": { "watchId": { "type": "string" }, "kind": { "enum": ["create", "modify", "delete", "rename"] }, "path": { "type": "string" }, "from": { "type": "string" } } } },
-    "settings.changed": { "capability": "settings", "payload": { "type": "object", "required": ["key", "value"], "additionalProperties": false, "properties": { "key": { "type": "string" }, "value": {} } } },
-    "sessions.changed": { "capability": "sessions", "payload": {"type": "object", "required": ["session"], "additionalProperties": false, "properties": {"session": {"$ref": "#/$defs/Session"}}} },
-    "sessions.removed": { "capability": "sessions", "payload": {"type": "object", "required": ["id"], "additionalProperties": false, "properties": {"id": {"type": "string"}}} },
-    "worktrees.changed": { "capability": "sessions", "payload": {"type": "object", "required": ["worktree"], "additionalProperties": false, "properties": {"worktree": {"$ref": "#/$defs/Worktree"}}} },
-    "worktrees.removed": { "capability": "sessions", "payload": {"type": "object", "required": ["path", "branch"], "additionalProperties": false, "properties": {"path": {"type": "string"}, "branch": {"type": "string"}, "sessionId": {"type": "string"}}} },
-    "run.changed": { "capability": "run:read", "payload": {"type": "object", "required": ["run"], "additionalProperties": false, "properties": {"run": {"$ref": "#/$defs/RunInstance"}}} },
-    "run.removed": { "capability": "run:read", "payload": {"type": "object", "required": ["id"], "additionalProperties": false, "properties": {"id": {"type": "string"}}} },
-    "containers.event": { "capability": "containers:read", "payload": {"type": "object", "required": ["id", "kind", "action", "at"], "additionalProperties": false, "properties": {"id": {"type": "string"}, "kind": {"enum": ["container", "volume", "image", "network"]}, "action": {"type": "string"}, "at": {"type": "string"}, "exitCode": {"type": "integer"}, "health": {"enum": ["starting", "healthy", "unhealthy"]}}} },
-    "keymap.changed": { "capability": "none", "payload": { "type": "object", "additionalProperties": false, "properties": {} } }
+    "fs.changed": {
+      "capability": "fs",
+      "payload": {
+        "type": "object",
+        "required": ["watchId", "kind", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "watchId": { "type": "string" },
+          "kind": { "enum": ["create", "modify", "delete", "rename"] },
+          "path": { "type": "string" },
+          "from": { "type": "string" }
+        }
+      }
+    },
+    "settings.changed": {
+      "capability": "settings",
+      "payload": {
+        "type": "object",
+        "required": ["key", "value"],
+        "additionalProperties": false,
+        "properties": { "key": { "type": "string" }, "value": {} }
+      }
+    },
+    "sessions.changed": {
+      "capability": "sessions",
+      "payload": {
+        "type": "object",
+        "required": ["session"],
+        "additionalProperties": false,
+        "properties": { "session": { "$ref": "#/$defs/Session" } }
+      }
+    },
+    "sessions.removed": {
+      "capability": "sessions",
+      "payload": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      }
+    },
+    "worktrees.changed": {
+      "capability": "sessions",
+      "payload": {
+        "type": "object",
+        "required": ["worktree"],
+        "additionalProperties": false,
+        "properties": { "worktree": { "$ref": "#/$defs/Worktree" } }
+      }
+    },
+    "worktrees.removed": {
+      "capability": "sessions",
+      "payload": {
+        "type": "object",
+        "required": ["path", "branch"],
+        "additionalProperties": false,
+        "properties": {
+          "path": { "type": "string" },
+          "branch": { "type": "string" },
+          "sessionId": { "type": "string" }
+        }
+      }
+    },
+    "run.changed": {
+      "capability": "run:read",
+      "payload": {
+        "type": "object",
+        "required": ["run"],
+        "additionalProperties": false,
+        "properties": { "run": { "$ref": "#/$defs/RunInstance" } }
+      }
+    },
+    "run.removed": {
+      "capability": "run:read",
+      "payload": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string" } }
+      }
+    },
+    "containers.event": {
+      "capability": "containers:read",
+      "payload": {
+        "type": "object",
+        "required": ["id", "kind", "action", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "enum": ["container", "volume", "image", "network"] },
+          "action": { "type": "string" },
+          "at": { "type": "string" },
+          "exitCode": { "type": "integer" },
+          "health": { "enum": ["starting", "healthy", "unhealthy"] }
+        }
+      }
+    },
+    "keymap.changed": {
+      "capability": "none",
+      "payload": { "type": "object", "additionalProperties": false, "properties": {} }
+    }
   }
 }

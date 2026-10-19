@@ -7,7 +7,13 @@ inside a scope listed under `fs` in `jensen.permissions`. A scope is:
 |---|---|
 | `"docs"` | the folder and everything under it |
 | `"*.png"` | every `.png` file anywhere in the project |
+| `"Dockerfile*"`, `".env*"`, `"*.env"` | every file whose name matches, anywhere in the project |
 | `"."` or `"*"` | every file in the project |
+
+Scopes under `fsRead` take the same forms but only reach the read methods (`read`, `readBytes`, `list`, `stat`,
+`watch`, and the backend's `fs::read` and `fs::list`). Writes need `fs`, and the user sees the two lists
+separately. Prefer `fsRead` for anything you only inspect, and a name pattern over `"."`, which puts files such
+as `.env` within reach. Filename scopes and `fsRead` need a Jensen that carries them.
 
 Jensen enforces the scopes below the plugin: a path outside them fails, and so does one that reaches outside
 through a symlink. The user sees each scope in plain words and approves it before the plugin is enabled, so

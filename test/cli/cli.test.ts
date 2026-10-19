@@ -87,6 +87,38 @@ describe("validatePackage for backends", () => {
     }
   });
 
+  test("accepts file name patterns in fs and fsRead and refuses malformed ones", () => {
+    for (const scope of ["Dockerfile*", ".env*", "*.env", "compose*"]) {
+      expect(fields({ permissions: { fs: [scope] } })).toEqual([]);
+      expect(fields({ permissions: { fsRead: [scope] } })).toEqual([]);
+    }
+    for (const scope of [
+      "**",
+      "*Docker*",
+      "Docker*file",
+      "../*",
+      "..*",
+      "a/Dockerfile*",
+      "/.env*",
+    ]) {
+      expect(fields({ permissions: { fsRead: [scope] } })).toContain("jensen.permissions.fsRead");
+    }
+    expect(fields({ permissions: { fsRead: "docs" } })).toContain("jensen.permissions.fsRead");
+  });
+
+  test("knows the sessions, run and containers permissions", () => {
+    expect(
+      fields({
+        permissions: { sessions: true, run: "control", containers: "read", fsRead: ["."] },
+      }),
+    ).toEqual([]);
+    expect(fields({ permissions: { sessions: "yes" } })).toContain("jensen.permissions.sessions");
+    expect(fields({ permissions: { run: "write" } })).toContain("jensen.permissions.run");
+    expect(fields({ permissions: { containers: true } })).toContain(
+      "jensen.permissions.containers",
+    );
+  });
+
   test("ties the backend permission, the wasm path and the tools together", () => {
     expect(fields({ backend: "backend.wasm", permissions: { backend: true } })).toEqual([]);
     expect(fields({ backend: "backend.wasm" })).toContain("jensen.permissions.backend");

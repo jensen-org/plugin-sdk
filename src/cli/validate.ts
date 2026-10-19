@@ -12,10 +12,22 @@ const BOOLEAN_PERMISSIONS = [
   "theme",
   "settings",
   "backend",
+  "sessions",
 ] as const;
+const LEVELS: Record<string, readonly string[]> = {
+  editor: ["none", "read", "write"],
+  run: ["none", "read", "control"],
+  containers: ["none", "read", "control"],
+};
+const SCOPE_LISTS = ["fs", "fsRead"] as const;
 const TOOL_NAME = /^[a-z][a-z0-9_]*$/;
 const MAX_TOOLS = 32;
-const KNOWN_PERMISSIONS = new Set<string>([...BOOLEAN_PERMISSIONS, "editor", "fs", "network"]);
+const KNOWN_PERMISSIONS = new Set<string>([
+  ...BOOLEAN_PERMISSIONS,
+  ...Object.keys(LEVELS),
+  ...SCOPE_LISTS,
+  "network",
+]);
 const RETIRED_KEYS: Record<string, string> = {
   contributes:
     "v1 plugins register panes, commands, settings and themes at runtime from onload(), so there is no contributes block",
@@ -25,6 +37,7 @@ const RETIRED_KEYS: Record<string, string> = {
 function isRelativeScope(scope: string): boolean {
   if (scope === "*" || scope === ".") return true;
   if (scope.startsWith("*.")) return /^[A-Za-z0-9_-]+$/.test(scope.slice(2));
+  if (scope.endsWith("*")) return /^(?!\.\.)[A-Za-z0-9._][A-Za-z0-9._-]*\*$/.test(scope);
   if (/[*?[]/.test(scope)) return false;
   if (!scope || scope.startsWith("/") || scope.includes("\\")) return false;
   const parts = scope.split("/");
@@ -84,10 +97,16 @@ export function validatePackage(pkg: PackageJson): Problem[] {
           add(`jensen.permissions.${key}`, "must be true or false");
         }
       }
-      if ("editor" in given && !["none", "read", "write"].includes(String(given.editor))) {
-        add("jensen.permissions.editor", 'must be "none", "read" or "write"');
+      for (const [key, levels] of Object.entries(LEVELS)) {
+        if (key in given && !levels.includes(String(given[key]))) {
+          const choices = levels.map((level) => `"${level}"`);
+          add(
+            `jensen.permissions.${key}`,
+            `must be ${choices.slice(0, -1).join(", ")} or ${choices.at(-1)}`,
+          );
+        }
       }
-      for (const key of ["fs", "network"] as const) {
+      for (const key of [...SCOPE_LISTS, "network"] as const) {
         const value = given[key];
         if (
           value !== undefined &&
@@ -96,13 +115,14 @@ export function validatePackage(pkg: PackageJson): Problem[] {
           add(`jensen.permissions.${key}`, "must be a list of strings");
         }
       }
-      const scopes = given.fs;
-      if (Array.isArray(scopes)) {
+      for (const key of SCOPE_LISTS) {
+        const scopes = given[key];
+        if (!Array.isArray(scopes)) continue;
         for (const scope of scopes) {
           if (typeof scope === "string" && !isRelativeScope(scope)) {
             add(
-              "jensen.permissions.fs",
-              `'${scope}' must be a folder inside the project, a file type such as "*.png", or "." for every file`,
+              `jensen.permissions.${key}`,
+              `'${scope}' must be a folder inside the project, a file type such as "*.png", a file name pattern such as "Dockerfile*", or "." for every file`,
             );
           }
         }

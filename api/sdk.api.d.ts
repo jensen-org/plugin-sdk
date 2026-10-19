@@ -455,8 +455,9 @@ export interface FileChange {
 }
 /**
  * The project's files. Every path is relative to the project root and has to fall inside a scope
- * listed under `fs` in the manifest: a folder such as "docs", a file type such as "*.png", or "." for
- * every file. Jensen enforces the scopes below the plugin and not in it, after the user consents.
+ * listed under `fs` in the manifest: a folder such as "docs", a file type such as "*.png", a file name
+ * pattern such as "Dockerfile*", or "." for every file. Scopes under `fsRead` reach only the read methods.
+ * Jensen enforces the scopes below the plugin and not in it, after the user consents.
  */
 export declare class Files extends Events<{
     create: [FileChange];
