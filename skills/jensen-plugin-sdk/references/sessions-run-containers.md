@@ -86,6 +86,10 @@ export default class Cleaner extends Plugin {
 }
 ```
 
+Confirmations are held by Jensen's daemon, so they also work when an agent triggers the call through a tool.
+If nobody has answered in time the call fails with a message to approve it in Jensen and retry the identical
+call. Do not loop on it: tell the user to approve it. An approval covers only the exact text shown.
+
 A Rust backend reaches the same methods with `host_api::call`, reads its caller with `host_api::context()`,
 waits in the host with `wait::until`, and removes its caller's own session stack with `run::remove_own()`.
 Those host imports need a Jensen that provides them.
