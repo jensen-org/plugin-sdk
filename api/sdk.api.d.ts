@@ -156,6 +156,7 @@ export interface Runner {
 }
 export declare const run: Runner;
 export declare function createRelease(entry: StoreEntry, published: Published, exec?: Runner): void;
+export declare function refuseStorePreRelease(version: string): void;
 export declare function openStorePr(entry: StoreEntry, exec?: Runner): string;
 export interface PublishOptions {
     cwd: string;
@@ -201,6 +202,13 @@ export interface PackageJson {
 }
 /** Checks what `jensen-plugin publish` will derive a manifest from, so a mistake shows up before a release. */
 export declare function validatePackage(pkg: PackageJson): Problem[];
+
+// cli/version.d.ts
+export declare const PLUGIN_VERSION_PATTERN: RegExp;
+export declare const PLUGIN_VERSION_HINT = "must be semver such as 1.0.0 or 1.0.0-dev.5, without build metadata";
+export declare function isPluginVersion(version: string): boolean;
+export declare function isReleaseVersion(version: string): boolean;
+export declare function isPreRelease(version: string): boolean;
 
 // commands.d.ts
 import type { HostConnection } from "./connection.ts";
