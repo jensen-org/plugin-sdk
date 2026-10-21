@@ -88,17 +88,23 @@ never lists a folder keeps loading everywhere.
 
 `host_api::call(method, params)` runs a protocol method as the plugin, under the same capability checks as
 the frontend, so the backend needs the same manifest permissions. UI methods are refused, and a refusal comes
-back as the host's own message. Typed helpers cover the common ones: `run::list()`, `run::remove_own()`,
-`containers::logs(id, &options)`, `git::history(params)`, `storage::load()` and `storage::load_project()`.
+back as the host's own message. Typed helpers cover the common ones, and return the structs in
+`jensen_plugin_backend::types` (`RunInstance`, `Container`, `LogPage`, `Session`, `Worktree`) rather than raw
+JSON: `run::list()`, `containers::list()`, `containers::logs(id, &options)`, `sessions::list()`,
+`worktrees::list()`, `run::remove_own()`, `git::history(params)`, `storage::load()` and
+`storage::load_project()`. `git::history` stays a `serde_json::Value`, because the protocol does not type its
+answer. An answer that does not fit its struct is an error that names the method.
 
 `host_api::context()` says who is calling: `caller` is `Caller::Ui` or `Caller::Agent`, with the `plugin_id`,
 `project_id` and, for an agent that called through a session, its `session_id` and `checkout` (that
 session's worktree, relative to the project root).
 
-A backend has no clock and each call has a time limit, so waiting happens in the host:
-`wait::until(&Condition::Container { id, state }, timeout_ms)` returns `true` once the container is running or
-healthy, a log line matches, or a run reaches a status, and `false` when the timeout passes first. Keep the
-timeout below the call limit.
+A backend has no clock, and Jensen stops a backend call that runs longer than 30 seconds, so waiting happens in
+the host: `wait::until(&Condition::Container { id, state: ContainerWait::Healthy }, timeout_ms)` returns `true`
+once the container is running or healthy, a log line matches, or a run reaches a status, and `false` when the
+timeout passes first. The host uses 10 seconds (`wait::DEFAULT_TIMEOUT_MS`) when the call names no timeout and
+cuts a longer one to 25 seconds (`wait::MAX_TIMEOUT_MS`), which leaves the rest of the 30 seconds for the work
+around it. To wait longer, return after each `false` and let the caller ask again.
 
 `run::remove_own()` removes the calling session's own Compose project, with its volumes and built images, and
 is refused when the call has no session. It is the one action that needs no confirmation.

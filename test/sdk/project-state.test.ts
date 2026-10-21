@@ -227,6 +227,7 @@ describe("actions", () => {
     expect(host.callsTo("containers.stop")).toEqual([{ id: "c1" }]);
     expect(host.callsTo("containers.restart")).toEqual([{ id: "c2" }]);
     expect(removed).toEqual({ confirmed: true, removed: [{ kind: "volume", id: "data" }] });
+    expect(removed.removed?.[0]?.id).toBe("data");
   });
 
   test("reports a declined confirmation instead of throwing", async () => {

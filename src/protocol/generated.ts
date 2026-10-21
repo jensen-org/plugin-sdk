@@ -2,7 +2,7 @@
 
 export const API_VERSION = 1 as const;
 
-export const ERROR_CODES = ["bad_request","permission_denied","not_found","failed","cancelled","rate_limited","too_busy","killed","io_budget_exceeded","unsupported"] as const;
+export const ERROR_CODES = ["bad_request","permission_denied","not_found","failed","approval_pending","cancelled","rate_limited","too_busy","killed","io_budget_exceeded","unsupported"] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
 export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network" | "sessions" | "run:read" | "run:control" | "containers:read" | "containers:control";

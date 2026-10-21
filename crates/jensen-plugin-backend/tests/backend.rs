@@ -100,7 +100,11 @@ mod host_access {
         set_test_context(&agent());
         set_test_responder(|method, params| {
             assert_eq!(method, "containers.logs");
-            Ok(json!({ "lines": [], "id": params["id"], "tail": params["tail"] }))
+            assert_eq!(params["id"], "c1");
+            assert_eq!(params["tail"], 20);
+            Ok(
+                json!({ "lines": [{ "at": "t", "stream": "stderr", "text": "boom" }], "cursor": "next" }),
+            )
         });
         let mut backend = Backend::default();
         backend.method("logs", |input| {
@@ -120,7 +124,10 @@ mod host_access {
 
         assert_eq!(
             reply,
-            json!({ "ok": { "session": "s1", "page": { "lines": [], "id": "c1", "tail": 20 } } })
+            json!({ "ok": { "session": "s1", "page": {
+                "lines": [{ "at": "t", "stream": "stderr", "text": "boom" }],
+                "cursor": "next"
+            } } })
         );
         clear_test_host();
     }
@@ -164,11 +171,166 @@ mod host_access {
         let met = wait::until(
             &wait::Condition::Container {
                 id: "c1".into(),
-                state: "healthy".into(),
+                state: jensen_plugin_backend::types::ContainerWait::Healthy,
             },
             5000,
         );
         assert_eq!(met, Ok(false));
         clear_test_host();
+    }
+
+    #[test]
+    fn a_shape_the_host_does_not_send_is_an_error_naming_the_method() {
+        set_test_responder(|_, _| Ok(json!([{ "id": "r1" }])));
+        let error = host_api::run::list().expect_err("incomplete instance");
+        assert!(
+            error.starts_with("run.list answered something unexpected"),
+            "{error}"
+        );
+        clear_test_host();
+    }
+
+    #[test]
+    fn typed_lists_read_the_hosts_answers() {
+        set_test_responder(|method, _| match method {
+            "sessions.list" => Ok(json!([{ "id": "s1", "status": "needs_input" }])),
+            "worktrees.list" => Ok(json!([{
+                "path": ".jensen/worktrees/a", "branch": "b", "head": "abc", "isPrimary": false,
+                "locked": false, "merged": true, "idleDays": 3, "sessionId": "s1"
+            }])),
+            "run.list" => Ok(json!([{
+                "id": "r1", "serviceId": "web", "status": "failed", "exitCode": 2,
+                "ports": [{ "declared": 3000, "host": 3001 }], "startedAt": "t", "origin": "outside"
+            }])),
+            _ => Err("unexpected".into()),
+        });
+        let sessions = host_api::sessions::list().expect("sessions");
+        assert_eq!(
+            sessions[0].status,
+            jensen_plugin_backend::types::SessionStatus::NeedsInput
+        );
+        assert!(host_api::worktrees::list().expect("worktrees")[0].merged);
+        let runs = host_api::run::list().expect("runs");
+        assert_eq!(runs[0].ports[0].host, 3001);
+        assert_eq!(runs[0].exit_code, Some(2));
+        clear_test_host();
+    }
+}
+
+mod schema {
+    use jensen_plugin_backend::json;
+    use jensen_plugin_backend::types::*;
+    use serde::de::DeserializeOwned;
+    use serde_json::Value;
+
+    fn vendored() -> Value {
+        serde_json::from_str(include_str!("../../../protocol/plugin-api.v1.json")).expect("schema")
+    }
+
+    fn values(schema: &Value, pointer: &str) -> Vec<String> {
+        schema
+            .pointer(pointer)
+            .and_then(Value::as_array)
+            .unwrap_or_else(|| panic!("{pointer} is not an enum in the vendored schema"))
+            .iter()
+            .map(|value| value.as_str().expect("string").to_string())
+            .collect()
+    }
+
+    fn every_value_has_a_variant<T: DeserializeOwned + serde::Serialize>(
+        schema: &Value,
+        pointer: &str,
+    ) {
+        let names = values(schema, pointer);
+        assert!(!names.is_empty(), "{pointer}");
+        for name in names {
+            let parsed: T = serde_json::from_value(json!(name))
+                .unwrap_or_else(|error| panic!("{pointer}: {name} has no variant: {error}"));
+            assert_eq!(
+                serde_json::to_value(parsed).expect("serialize"),
+                json!(name)
+            );
+        }
+    }
+
+    #[test]
+    fn every_enum_value_in_the_schema_has_a_rust_variant() {
+        let schema = vendored();
+        let defs = "/$defs";
+        every_value_has_a_variant::<RunStatus>(
+            &schema,
+            &format!("{defs}/RunInstance/properties/status/enum"),
+        );
+        every_value_has_a_variant::<RunOrigin>(
+            &schema,
+            &format!("{defs}/RunInstance/properties/origin/enum"),
+        );
+        every_value_has_a_variant::<ContainerEngine>(
+            &schema,
+            &format!("{defs}/ContainerEngine/enum"),
+        );
+        every_value_has_a_variant::<ContainerTie>(&schema, &format!("{defs}/ContainerTie/enum"));
+        every_value_has_a_variant::<ContainerState>(
+            &schema,
+            &format!("{defs}/Container/properties/state/enum"),
+        );
+        every_value_has_a_variant::<Health>(
+            &schema,
+            &format!("{defs}/Container/properties/health/enum"),
+        );
+        every_value_has_a_variant::<LogStream>(
+            &schema,
+            &format!("{defs}/LogLine/properties/stream/enum"),
+        );
+        every_value_has_a_variant::<SessionStatus>(
+            &schema,
+            &format!("{defs}/Session/properties/status/enum"),
+        );
+        every_value_has_a_variant::<ContainerWait>(
+            &schema,
+            &format!("{defs}/WaitCondition/oneOf/0/properties/state/enum"),
+        );
+        every_value_has_a_variant::<RunWait>(
+            &schema,
+            &format!("{defs}/WaitCondition/oneOf/2/properties/status/enum"),
+        );
+    }
+
+    #[test]
+    fn every_field_the_schema_requires_is_a_field_of_the_struct() {
+        let schema = vendored();
+        let full = |name: &str| -> Value {
+            let def = &schema["$defs"][name];
+            let mut object = serde_json::Map::new();
+            for field in def["required"].as_array().expect("required") {
+                let field = field.as_str().expect("name");
+                let property = &def["properties"][field];
+                object.insert(field.to_string(), sample(&schema, property));
+            }
+            Value::Object(object)
+        };
+        serde_json::from_value::<RunInstance>(full("RunInstance")).expect("RunInstance");
+        serde_json::from_value::<Container>(full("Container")).expect("Container");
+        serde_json::from_value::<LogLine>(full("LogLine")).expect("LogLine");
+        serde_json::from_value::<Session>(full("Session")).expect("Session");
+        serde_json::from_value::<Worktree>(full("Worktree")).expect("Worktree");
+    }
+
+    fn sample(schema: &Value, property: &Value) -> Value {
+        if let Some(reference) = property.get("$ref").and_then(Value::as_str) {
+            let target = schema.pointer(&reference[1..]).expect("ref");
+            return sample(schema, target);
+        }
+        if let Some(options) = property.get("enum").and_then(Value::as_array) {
+            return options[0].clone();
+        }
+        match property.get("type").and_then(Value::as_str) {
+            Some("string") => json!("x"),
+            Some("integer") => json!(1),
+            Some("boolean") => json!(false),
+            Some("array") => json!([]),
+            Some("object") => json!({}),
+            other => panic!("no sample for {other:?}"),
+        }
     }
 }

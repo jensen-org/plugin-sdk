@@ -1,7 +1,9 @@
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use crate::host;
+use crate::types::{Container, LogPage, RunInstance, Session, Worktree};
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -34,6 +36,11 @@ pub fn call(method: &str, params: Value) -> Result<Value, String> {
     }
     serde_json::from_slice(&answer)
         .map_err(|error| format!("the answer is not valid json: {error}"))
+}
+
+fn typed<T: DeserializeOwned>(method: &str, params: Value) -> Result<T, String> {
+    serde_json::from_value(call(method, params)?)
+        .map_err(|error| format!("{method} answered something unexpected: {error}"))
 }
 
 /// The caller of the current backend call.
@@ -70,8 +77,8 @@ pub mod run {
     use super::*;
 
     /// Needs `run` in the manifest.
-    pub fn list() -> Result<Value, String> {
-        call("run.list", json!({}))
+    pub fn list() -> Result<Vec<RunInstance>, String> {
+        typed("run.list", json!({}))
     }
 
     /// Removes the calling session's own Compose project: containers, network, volumes and the images it
@@ -97,11 +104,35 @@ pub mod containers {
         pub cursor: Option<String>,
     }
 
-    /// One page of logs, `{ lines, cursor? }`. Needs `containers` in the manifest.
-    pub fn logs(id: &str, options: &LogOptions) -> Result<Value, String> {
+    /// The containers Jensen ties to the open project. Needs `containers` in the manifest.
+    pub fn list() -> Result<Vec<Container>, String> {
+        typed("containers.list", json!({}))
+    }
+
+    /// One page of logs. Pass the page's `cursor` back in [`LogOptions`] for the next one. Needs
+    /// `containers` in the manifest.
+    pub fn logs(id: &str, options: &LogOptions) -> Result<LogPage, String> {
         let mut params = serde_json::to_value(options).map_err(|error| error.to_string())?;
         params["id"] = json!(id);
-        call("containers.logs", params)
+        typed("containers.logs", params)
+    }
+}
+
+pub mod sessions {
+    use super::*;
+
+    /// The open project's sessions. Needs `sessions` in the manifest.
+    pub fn list() -> Result<Vec<Session>, String> {
+        typed("sessions.list", json!({}))
+    }
+}
+
+pub mod worktrees {
+    use super::*;
+
+    /// The open project's worktrees. Needs `sessions` in the manifest.
+    pub fn list() -> Result<Vec<Worktree>, String> {
+        typed("worktrees.list", json!({}))
     }
 }
 
@@ -131,17 +162,25 @@ pub mod storage {
 /// Waiting happens in the host, because a backend has no clock and each call has a time limit.
 pub mod wait {
     use super::*;
+    use crate::types::{ContainerWait, RunWait};
 
     #[derive(Clone, Debug, Serialize)]
     #[serde(tag = "kind", rename_all = "lowercase")]
     pub enum Condition {
-        Container { id: String, state: String },
+        Container { id: String, state: ContainerWait },
         Log { id: String, pattern: String },
-        Run { id: String, status: String },
+        Run { id: String, status: RunWait },
     }
 
+    /// The longest `timeout_ms` the host honours, in milliseconds. A larger value is cut to it.
+    pub const MAX_TIMEOUT_MS: u64 = 25_000;
+
+    /// The `timeout_ms` the host uses when the call names none.
+    pub const DEFAULT_TIMEOUT_MS: u64 = 10_000;
+
     /// True when the condition was met, false when `timeout_ms` passed first. Each condition needs the
-    /// capability that reads what it watches.
+    /// capability that reads what it watches. The host stops a backend call after 30 seconds, so stay
+    /// within [`MAX_TIMEOUT_MS`] and leave room for the rest of the call.
     pub fn until(condition: &Condition, timeout_ms: u64) -> Result<bool, String> {
         let answer = call(
             "wait.until",

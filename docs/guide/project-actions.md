@@ -14,7 +14,7 @@ const result = await this.app.containers.remove([{ kind: "volume", id: "pgdata" 
 
 Confirmations are held by Jensen's daemon, not by a window, so they work the same when an AI agent triggers
 the call. Any Jensen client can answer, and the call waits a short time for the person. If nobody has answered
-yet the call fails with a message to approve it in Jensen and retry. The request stays pending for a few
+yet the call fails with a [`HostError`](/reference/errors) whose `code` is `approval_pending` and whose message says to approve it in Jensen and retry. The request stays pending for a few
 minutes, and once approved the identical retry goes through. An approval covers only the exact text the person
 was shown.
 

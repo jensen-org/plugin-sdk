@@ -35,6 +35,7 @@ export default class Safe extends Plugin {
 | `permission_denied` | the capability in `error.capability` was not granted | add the matching key to `jensen.permissions`, see [permissions](permissions.md) |
 | `not_found` | the target does not exist | check the path or id, use `files.exists` first |
 | `failed` | the call was valid and did not work. Also what a throw inside your callback becomes | read the message |
+| `approval_pending` | an action needs the person's approval and nobody has answered yet | ask the person to approve it in Jensen, then retry the identical call within ten minutes |
 | `cancelled` | the call was cancelled | retry if still needed |
 | `unsupported` | Jensen does not serve that method, or the plugin does not handle a callback | `requireApiVersion`, raise `minAppVersion` |
 | `rate_limited`, `too_busy`, `io_budget_exceeded`, `killed` | the plugin hit a budget | batch calls, debounce events, avoid tight loops |

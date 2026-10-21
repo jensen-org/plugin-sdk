@@ -1,6 +1,6 @@
 // protocol/generated.d.ts
 export declare const API_VERSION: 1;
-export declare const ERROR_CODES: readonly ["bad_request", "permission_denied", "not_found", "failed", "cancelled", "rate_limited", "too_busy", "killed", "io_budget_exceeded", "unsupported"];
+export declare const ERROR_CODES: readonly ["bad_request", "permission_denied", "not_found", "failed", "approval_pending", "cancelled", "rate_limited", "too_busy", "killed", "io_budget_exceeded", "unsupported"];
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network" | "sessions" | "run:read" | "run:control" | "containers:read" | "containers:control";
 export type Handler = {

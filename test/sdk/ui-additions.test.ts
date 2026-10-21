@@ -48,6 +48,19 @@ describe("notice actions", () => {
     expect(pressed).toEqual([]);
   });
 
+  test("hears again after the last listener was disposed and a new one was added", async () => {
+    await run({ respond: { "ui.notice": () => "n1" } });
+    const notice = new Notice("x", { actions: [{ id: "a", label: "A" }] });
+    notice.onAction(() => {}).dispose();
+    await host.settle();
+    const pressed: string[] = [];
+    notice.onAction((id) => pressed.push(id));
+
+    await host.request("notice.action", { noticeId: "n1", actionId: "a" });
+
+    expect(pressed).toEqual(["a"]);
+  });
+
   test("keeps the plain call shape and copes with a host that returns no id", async () => {
     await run();
     const notice = new Notice("Saved");

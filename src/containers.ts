@@ -71,7 +71,7 @@ export class Containers extends Events<{ event: [ContainerEvent] }> {
    * Removes leftovers. Jensen lists them with their sizes and the person confirms. It refuses anything
    * running or not tied to the project, and says which items it removed.
    */
-  remove(items: ContainerItem[]): Promise<RemoveResult | Confirmation> {
+  remove(items: ContainerItem[]): Promise<RemoveResult> {
     return confirmation(this.host.call("containers.remove", { items }));
   }
 }

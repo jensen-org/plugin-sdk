@@ -22,13 +22,17 @@ export function deliverNoticeAction(app: App, noticeId: string, actionId: string
 
 /**
  * A toast. `new Notice("Saved")` works anywhere inside a running plugin. With `actions` it shows buttons,
- * and `onAction` hears which one was pressed, which needs a Jensen that supports them.
+ * and `onAction` hears which one was pressed, which needs a Jensen that supports them. Dispose the
+ * listener when the plugin no longer cares: Jensen keeps no record of a toast once its last listener is gone.
  */
 export class Notice {
   private readonly listeners = new Set<ActionListener>();
+  private readonly app: App;
+  private id: string | undefined;
 
   constructor(message: string, options: NoticeOptions = {}) {
     const app = currentApp();
+    this.app = app;
     app
       .call("ui.notice", {
         message,
@@ -38,9 +42,8 @@ export class Notice {
       })
       .then((id) => {
         if (typeof id !== "string" || !options.actions?.length) return;
-        const byId = noticeListeners.get(app) ?? new Map<string, Set<ActionListener>>();
-        byId.set(id, this.listeners);
-        noticeListeners.set(app, byId);
+        this.id = id;
+        if (this.listeners.size > 0) this.track();
       })
       .catch((cause) => {
         queueMicrotask(() => {
@@ -51,7 +54,22 @@ export class Notice {
 
   onAction(callback: ActionListener): Disposable {
     this.listeners.add(callback);
-    return toDisposable(() => this.listeners.delete(callback));
+    if (this.id !== undefined) this.track();
+    return toDisposable(() => {
+      this.listeners.delete(callback);
+      if (this.listeners.size === 0) this.untrack();
+    });
+  }
+
+  private track(): void {
+    if (this.id === undefined) return;
+    const byId = noticeListeners.get(this.app) ?? new Map<string, Set<ActionListener>>();
+    byId.set(this.id, this.listeners);
+    noticeListeners.set(this.app, byId);
+  }
+
+  private untrack(): void {
+    if (this.id !== undefined) noticeListeners.get(this.app)?.delete(this.id);
   }
 }
 

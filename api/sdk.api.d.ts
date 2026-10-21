@@ -327,7 +327,7 @@ export declare class Containers extends Events<{
      * Removes leftovers. Jensen lists them with their sizes and the person confirms. It refuses anything
      * running or not tied to the project, and says which items it removed.
      */
-    remove(items: ContainerItem[]): Promise<RemoveResult | Confirmation>;
+    remove(items: ContainerItem[]): Promise<RemoveResult>;
 }
 
 // context.d.ts
@@ -1015,12 +1015,17 @@ type ActionListener = (actionId: string) => void;
 export declare function deliverNoticeAction(app: App, noticeId: string, actionId: string): void;
 /**
  * A toast. `new Notice("Saved")` works anywhere inside a running plugin. With `actions` it shows buttons,
- * and `onAction` hears which one was pressed, which needs a Jensen that supports them.
+ * and `onAction` hears which one was pressed, which needs a Jensen that supports them. Dispose the
+ * listener when the plugin no longer cares: Jensen keeps no record of a toast once its last listener is gone.
  */
 export declare class Notice {
     private readonly listeners;
+    private readonly app;
+    private id;
     constructor(message: string, options?: NoticeOptions);
     onAction(callback: ActionListener): Disposable;
+    private track;
+    private untrack;
 }
 export declare class ConfirmModal {
     private readonly app;
