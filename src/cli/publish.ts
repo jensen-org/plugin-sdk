@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { buildOnce, checkProject, readPackage } from "./build.ts";
 import type { PackageJson, Problem } from "./validate.ts";
+import { isPreRelease, PLUGIN_VERSION_HINT, PLUGIN_VERSION_PATTERN } from "./version.ts";
 
 export const RELEASE_DIR = "release";
 export const MANIFEST_ASSET = "manifest.json";
@@ -50,7 +51,7 @@ const ENTRY_RULES: Record<Exclude<keyof StoreEntry, "tag">, { pattern?: RegExp; 
   author: { hint: "is required" },
   description: { hint: "is required" },
   category: { pattern: /^[a-z0-9-]+$/, hint: 'is required: set "jensen.category", such as "lint"' },
-  version: { pattern: /^\d+\.\d+\.\d+$/, hint: "must be major.minor.patch" },
+  version: { pattern: PLUGIN_VERSION_PATTERN, hint: PLUGIN_VERSION_HINT },
   min_app_version: { pattern: /^\d+\.\d+\.\d+$/, hint: "must be major.minor.patch" },
   repo: {
     pattern: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
@@ -194,6 +195,7 @@ export function releaseArgs(entry: StoreEntry, published: Published): string[] {
     `${entry.name} ${entry.version}`,
     "--notes",
     `${entry.name} ${entry.version}`,
+    ...(isPreRelease(entry.version) ? ["--prerelease"] : []),
   ];
 }
 
@@ -218,7 +220,16 @@ export function createRelease(entry: StoreEntry, published: Published, exec: Run
   exec("gh", releaseArgs(entry, published));
 }
 
+export function refuseStorePreRelease(version: string): void {
+  if (isPreRelease(version)) {
+    throw new Error(
+      `${version} is a pre-release and the plugin store only takes major.minor.patch versions: publish it to a private registry, or drop --store-pr`,
+    );
+  }
+}
+
 export function openStorePr(entry: StoreEntry, exec: Runner = run): string {
+  refuseStorePreRelease(entry.version);
   const login = exec("gh", ["api", "user", "--jq", ".login"]);
   exec("gh", ["repo", "fork", STORE_REPO, "--clone=false"]);
   const work = mkdtempSync(join(tmpdir(), "jensen-plugin-store-"));
@@ -269,6 +280,7 @@ export async function publish(options: PublishOptions): Promise<StoreEntry> {
   if (problems.length > 0) {
     throw new Error(problems.map((p) => `  ${p.field}: ${p.message}`).join("\n"));
   }
+  if (options.storePr) refuseStorePreRelease(readPackage(options.cwd).version ?? "");
   if (options.build) await buildOnce({ cwd: options.cwd, minify: options.minify });
   const published = assemble(options.cwd, readPackage(options.cwd));
   const entry = published.entry;

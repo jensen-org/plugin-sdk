@@ -68,3 +68,22 @@ listed. If a private registry lists an id the official store also lists, the off
 
 `jensen.minAppVersion` is the oldest Jensen the plugin runs on. The protocol version is `1`; a plugin built
 for another version is refused with a message that says so.
+
+## Pre-release versions
+
+A plugin version is semver 2.0.0: `major.minor.patch`, optionally followed by a pre-release part such as
+`0.1.2-dev.5`. Build metadata (`+sha`) is not accepted. `validate` and `publish` share this one rule, so a version
+that validates also publishes. `jensen.minAppVersion` stays `major.minor.patch`.
+
+Pre-releases are for private registries, such as a dev registry that CI publishes to on every push:
+
+- `publish --release` passes `--prerelease` to `gh release create`, so GitHub never marks a dev build as Latest.
+- `publish --store-pr` refuses a pre-release before it builds or forks, because the official store only takes
+  `major.minor.patch`.
+
+Jensen accepts a pre-release manifest at install time. It does not order versions: the index lists one entry per
+id, and Jensen installs the version that entry names. Whichever of `0.1.2-dev.9` and `0.1.2-dev.10` the registry
+lists is the one installed, so keep the entry pointing at the newest build.
+
+The official store wins over a private registry that lists the same id, so a dev entry for a plugin that is also
+in the store is never offered. Give the dev channel its own id, such as `dev.me.hello-dev`.
