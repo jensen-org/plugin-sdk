@@ -1,3 +1,5 @@
+import { isPluginVersion, PLUGIN_VERSION_HINT } from "./version.ts";
+
 export interface Problem {
   field: string;
   message: string;
@@ -58,8 +60,7 @@ export function validatePackage(pkg: PackageJson): Problem[] {
   const add = (field: string, message: string) => problems.push({ field, message });
 
   if (!pkg.name) add("name", "is required");
-  if (!pkg.version || !/^\d+\.\d+\.\d+/.test(pkg.version))
-    add("version", "must be semver, such as 1.0.0");
+  if (!pkg.version || !isPluginVersion(pkg.version)) add("version", PLUGIN_VERSION_HINT);
   if (!pkg.description) add("description", "is required: Jensen shows it before the user installs");
   if (!pkg.author) add("author", "is required");
 
