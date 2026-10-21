@@ -153,6 +153,7 @@ Where to read more, one line each:
 - [panes-and-ui](references/panes-and-ui.md): every `ui` node builder, pane state, handlers, custom panes, opening panes.
 - [settings](references/settings.md): settings tabs, every control, persisting data, Jensen's own settings.
 - [files-editor-theme](references/files-editor-theme.md): reading and writing files, editor edits, decorations, themes, events.
+- [sessions-run-containers](references/sessions-run-containers.md): reading sessions, worktrees, Run and containers, with their events.
 - [permissions](references/permissions.md): the manifest permission keys, what each gates, how to ask for the least.
 - [testing](references/testing.md): `TestHost`, answering calls, driving callbacks, running a built `main.js`.
 - [publishing](references/publishing.md): `release/`, the store entry, GitHub release, store pull request, registries.

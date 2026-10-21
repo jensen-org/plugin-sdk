@@ -130,4 +130,6 @@ for (const each of open) await each.refresh();
 `OpenPaneOptions`: `state`, `direction` (`above`, `below`, `left`, `right`, `within`), `reference` (a
 `PaneLeaf`), `focus`. A `PaneLeaf` has `focus`, `close`, `setState`, `refresh`, `moveNextTo(reference, direction)`
 and `instanceId`, `paneId`, `pluginId`, `kind`, `title`, `active`. `currentPage()` resolves to `session`, `code`
-or `notes`.
+or `notes`. `workspace.setBadge(paneId, { count?, text?, tone? })` badges a pane's tab and `setBadge(paneId)`
+clears it. A `Notice` takes `actions: [{ id, label }]` and `notice.onAction((actionId) => ...)` hears the pressed
+one. Both need a Jensen that supports them.

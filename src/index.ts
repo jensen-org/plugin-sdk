@@ -3,9 +3,22 @@ export { Backend, type BackendResult } from "./backend.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
+export type { Confirmation } from "./confirmed.ts";
 export { HostConnection } from "./connection.ts";
+export {
+  type ContainerEvent,
+  Containers,
+  type LogOptions,
+  type LogPage,
+  type RemoveResult,
+} from "./containers.ts";
 export { type Disposable, DisposableStore, toDisposable } from "./disposable.ts";
-export { Decorations, Editor, type EditorSelection } from "./editor.ts";
+export {
+  type DecorationActionEvent,
+  Decorations,
+  Editor,
+  type EditorSelection,
+} from "./editor.ts";
 export { HostError, NotInJensenError } from "./errors.ts";
 export { type EventRef, Events } from "./events.ts";
 export { type FileChange, FileEntry, FileSystemEntry, Files, FolderEntry } from "./files.ts";
@@ -17,6 +30,7 @@ export {
   type PaneViewConstructor,
 } from "./pane.ts";
 export {
+  type DataOptions,
   type MenuContexts,
   type MenuTarget,
   Plugin,
@@ -24,7 +38,9 @@ export {
 } from "./plugin.ts";
 export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
+export { Run, type RunTarget } from "./run.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
+export { type SessionChip, Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
 export {
   ButtonComponent,
   ColorComponent,
@@ -55,4 +71,10 @@ export {
   SuggestModal,
 } from "./ui.ts";
 export { Viewer, type ViewerFile, type ViewerMatch } from "./viewer.ts";
-export { type LayoutChange, type OpenPaneOptions, PaneLeaf, Workspace } from "./workspace.ts";
+export {
+  type LayoutChange,
+  type OpenPaneOptions,
+  type PaneBadge,
+  PaneLeaf,
+  Workspace,
+} from "./workspace.ts";

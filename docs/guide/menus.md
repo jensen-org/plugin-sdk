@@ -25,3 +25,17 @@ The strip only shows when a plugin has put something in it.
 
 `new Notice("Saved")`, `new ConfirmModal(app, {...}).open()`, `new PromptModal`, `new ChoiceModal`,
 `new SuggestModal` (a searchable list).
+
+A notice can carry buttons, and `onAction` hears which one was pressed:
+
+```ts
+const notice = new Notice("The db stack crashed", {
+  severity: "error",
+  actions: [{ id: "restart", label: "Restart" }],
+});
+notice.onAction((actionId) => {
+  if (actionId === "restart") void this.app.run.restart({ serviceId: "db" });
+});
+```
+
+Buttons need a Jensen that supports them. An older one shows the message and `onAction` never fires.

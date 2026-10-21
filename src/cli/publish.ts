@@ -107,6 +107,12 @@ function permissionsOf(block: Record<string, unknown>) {
     editor: typeof given.editor === "string" ? given.editor : "none",
     fs: Array.isArray(given.fs) ? given.fs : [],
     network: Array.isArray(given.network) ? given.network : [],
+    ...(given.sessions === true ? { sessions: true } : {}),
+    ...(typeof given.run === "string" && given.run !== "none" ? { run: given.run } : {}),
+    ...(typeof given.containers === "string" && given.containers !== "none"
+      ? { containers: given.containers }
+      : {}),
+    ...(Array.isArray(given.fsRead) && given.fsRead.length > 0 ? { fsRead: given.fsRead } : {}),
   };
 }
 

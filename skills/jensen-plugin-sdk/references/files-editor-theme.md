@@ -57,8 +57,10 @@ change labelled with your plugin.
 | `replaceRange(from, to, text)`, `replaceSelection(text)`, `insert(text, at?)`, `save(path?)` | write |
 | `decorate(key, path, decorations)`, `clearDecorations(key)` | read, visual only |
 
-`Decorations` builders: `mark(from, to, { tone?, tooltip? })`, `line(line, tone?)`,
-`gutter(line, text, { tone?, tooltip? })`, `hint(at, text, tone?)`. Decorations follow the text as the user types.
+`Decorations` builders: `mark(from, to, { tone?, tooltip?, action? })`, `line(line, tone?, { action? })`,
+`gutter(line, text, { tone?, tooltip?, action? })`, `hint(at, text, tone?, { action? })`. Decorations follow the
+text as the user types. An `action` is `{ id, title }`; `editor.onDecorationAction(key, ({ path, actionId }) => ...)`
+hears it, and needs a Jensen that supports actions.
 Reuse one `key` per feature so you replace your own decorations instead of stacking them.
 
 ```ts check

@@ -23,6 +23,8 @@ export default defineConfig({
           { text: "Files", link: "/guide/files" },
           { text: "Viewer toolbars", link: "/guide/viewers" },
           { text: "A Rust backend", link: "/guide/backend" },
+          { text: "Sessions, Run and containers", link: "/guide/project-state" },
+          { text: "Acting on Run and containers", link: "/guide/project-actions" },
           { text: "The theme", link: "/guide/theme" },
           { text: "Menus and the status strip", link: "/guide/menus" },
           { text: "Testing", link: "/guide/testing" },

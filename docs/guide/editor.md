@@ -31,6 +31,19 @@ await this.app.editor.clearDecorations("todos");
 
 Decorations follow the text as the user types.
 
+Every builder takes an `action`, `{ id, title }`, that Jensen offers on the decoration, such as a fix.
+`editor.onDecorationAction(key, ({ path, actionId }) => ...)` hears the choice, for the decorations set under
+that key. Actions need a Jensen that supports them.
+
+```ts
+await this.app.editor.decorate("ports", "compose.yaml", [
+  Decorations.line(4, "warning", { action: { id: "fix", title: "Use a free port" } }),
+]);
+this.registerDisposable(
+  this.app.editor.onDecorationAction("ports", ({ path, actionId }) => console.log(path, actionId)),
+);
+```
+
 ## Events
 
 `app.editor.on("change" | "selection-change" | "active-change" | "save", ...)`.

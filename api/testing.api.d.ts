@@ -1,6 +1,6 @@
 // testing.d.ts
 import { HostConnection } from "./connection.ts";
-import { type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName, type Surface } from "./protocol/index.ts";
+import { type CallbackMap, type CallbackName, type Capability, type EventMap, type EventName, type MethodMap, type MethodName, type Surface } from "./protocol/index.ts";
 export interface TestHostOptions {
     /**
      * Hand the plugin's end of the port over as `globalThis.__jensenPort`, the way Jensen does at boot,
@@ -8,6 +8,11 @@ export interface TestHostOptions {
      */
     asGlobalPort?: boolean;
     surface?: Surface;
+    /**
+     * The capabilities the plugin's manifest grants. When set, a call to a method that needs another
+     * capability fails with `permission_denied`, so a test can check the plugin's consent assumptions.
+     */
+    permissions?: Capability[];
     respond?: {
         [K in MethodName]?: (params: MethodMap[K]["params"]) => MethodMap[K]["result"] | Promise<MethodMap[K]["result"]>;
     };
@@ -24,6 +29,7 @@ export declare class TestHost {
     }>;
     private readonly hostPort;
     private readonly responders;
+    private readonly granted?;
     private seq;
     private readonly pending;
     constructor(options?: TestHostOptions);

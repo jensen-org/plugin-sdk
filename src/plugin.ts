@@ -21,6 +21,11 @@ export interface MenuContexts {
 
 export type ApiVersion = typeof API_VERSION;
 
+/** `project` keeps the data apart for each project. The default, `global`, is shared by all of them. */
+export interface DataOptions {
+  scope?: "global" | "project";
+}
+
 function report(cause: unknown): void {
   queueMicrotask(() => {
     throw cause;
@@ -57,12 +62,14 @@ export abstract class Plugin extends Component {
     return `paneFocus:plugin:${this.id}/${paneId}`;
   }
 
-  async loadData<T = unknown>(): Promise<T | null> {
-    return (await this.app.call("storage.load", {})) as T | null;
+  async loadData<T = unknown>(options: DataOptions = {}): Promise<T | null> {
+    const params = options.scope === "project" ? { scope: options.scope } : {};
+    return (await this.app.call("storage.load", params)) as T | null;
   }
 
-  saveData(data: unknown): Promise<null> {
-    return this.app.call("storage.save", { data });
+  saveData(data: unknown, options: DataOptions = {}): Promise<null> {
+    const params = options.scope === "project" ? { data, scope: options.scope } : { data };
+    return this.app.call("storage.save", params);
   }
 
   addCommand(spec: CommandSpec): Disposable {

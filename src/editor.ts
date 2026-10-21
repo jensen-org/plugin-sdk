@@ -1,6 +1,14 @@
 import type { HostConnection } from "./connection.ts";
+import { type Disposable, toDisposable } from "./disposable.ts";
 import { Events } from "./events.ts";
-import type { ActiveEditor, Decoration, Position, Range, Tone } from "./protocol/index.ts";
+import type {
+  ActiveEditor,
+  Decoration,
+  DecorationAction,
+  Position,
+  Range,
+  Tone,
+} from "./protocol/index.ts";
 
 export interface EditorSelection {
   text: string;
@@ -8,25 +16,45 @@ export interface EditorSelection {
   to: Position;
 }
 
-/** Decorations Jensen draws on top of the code editor. They are visual only and never change the buffer. */
+export interface DecorationActionEvent {
+  key: string;
+  path: string;
+  actionId: string;
+}
+
+/**
+ * Decorations Jensen draws on top of the code editor. They are visual only and never change the buffer.
+ * Give one an `action` and Jensen offers it on the decoration, then reports a choice to
+ * `editor.onDecorationAction`.
+ */
 export const Decorations = {
   mark: (
     from: number,
     to: number,
-    options: { tone?: Tone; tooltip?: string } = {},
+    options: { tone?: Tone; tooltip?: string; action?: DecorationAction } = {},
   ): Decoration => ({
     kind: "mark",
     from,
     to,
     ...options,
   }),
-  line: (line: number, tone?: Tone): Decoration => ({ kind: "line", line, tone }),
+  line: (line: number, tone?: Tone, options: { action?: DecorationAction } = {}): Decoration => ({
+    kind: "line",
+    line,
+    tone,
+    ...options,
+  }),
   gutter: (
     line: number,
     text: string,
-    options: { tone?: Tone; tooltip?: string } = {},
+    options: { tone?: Tone; tooltip?: string; action?: DecorationAction } = {},
   ): Decoration => ({ kind: "gutter", line, text, ...options }),
-  hint: (at: number, text: string, tone?: Tone): Decoration => ({ kind: "hint", at, text, tone }),
+  hint: (
+    at: number,
+    text: string,
+    tone?: Tone,
+    options: { action?: DecorationAction } = {},
+  ): Decoration => ({ kind: "hint", at, text, tone, ...options }),
 };
 
 /**
@@ -38,6 +66,7 @@ export class Editor extends Events<{
   "selection-change": [{ path: string | null; selection: Range; cursor: Position }];
   "active-change": [ActiveEditor | null];
   save: [{ path: string }];
+  "decoration-action": [DecorationActionEvent];
 }> {
   constructor(private readonly host: HostConnection) {
     super();
@@ -88,6 +117,17 @@ export class Editor extends Events<{
 
   decorate(key: string, path: string, decorations: Decoration[]): Promise<null> {
     return this.host.call("editor.setDecorations", { key, path, decorations });
+  }
+
+  /** Hears the action a person chose on one of the decorations set under `key`. */
+  onDecorationAction(
+    key: string,
+    callback: (event: { path: string; actionId: string }) => void,
+  ): Disposable {
+    const ref = this.on("decoration-action", (event) => {
+      if (event.key === key) callback({ path: event.path, actionId: event.actionId });
+    });
+    return toDisposable(() => ref.dispose());
   }
 
   clearDecorations(key: string): Promise<null> {

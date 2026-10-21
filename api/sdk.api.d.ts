@@ -19,10 +19,13 @@ import { AppSettings } from "./app-settings.ts";
 import { Backend } from "./backend.ts";
 import { Commands, Keymap } from "./commands.ts";
 import type { HostConnection } from "./connection.ts";
+import { Containers } from "./containers.ts";
 import { Editor } from "./editor.ts";
 import { Files } from "./files.ts";
 import type { MethodMap, MethodName } from "./protocol/index.ts";
+import { Run } from "./run.ts";
 import { Git, Graph, Knowledge, Net } from "./services.ts";
+import { Sessions, Worktrees } from "./sessions.ts";
 import { Theme } from "./theme.ts";
 import { Viewer } from "./viewer.ts";
 import { Workspace } from "./workspace.ts";
@@ -30,7 +33,7 @@ export type Hello = MethodMap["plugin.hello"]["result"];
 /**
  * The object graph a plugin works through: the workspace, the editor, the project's files, the theme,
  * commands and settings, the file viewers and the plugin's own backend, plus the code graph, knowledge
- * base, git and network when the manifest asks.
+ * base, git, network, sessions, Run and containers when the manifest asks.
  */
 export declare class App {
     readonly connection: HostConnection;
@@ -48,10 +51,16 @@ export declare class App {
     readonly net: Net;
     readonly backend: Backend;
     readonly viewer: Viewer;
+    readonly sessions: Sessions;
+    readonly worktrees: Worktrees;
+    readonly run: Run;
+    readonly containers: Containers;
     constructor(connection: HostConnection, hello: Hello);
     get pluginId(): string;
     /** The version of Jensen this plugin is running in. */
     get appVersion(): string;
+    /** The open project. Undefined in a Jensen too old to say. */
+    get project(): Hello["project"];
     /**
      * True when this copy of the plugin runs inside one of its own custom panes. Registrations are
      * skipped there, because the copy that runs headless has already made them.
@@ -245,6 +254,13 @@ export declare class Component {
     registerInterval(id: number): number;
 }
 
+// confirmed.d.ts
+export interface Confirmation {
+    confirmed: boolean;
+}
+/** Turns a refused confirmation into `{ confirmed: false }`, whether the host answers it or rejects it as cancelled. */
+export declare function confirmation<T extends Confirmation>(call: Promise<T>): Promise<T | Confirmation>;
+
 // connection.d.ts
 import { type Disposable } from "./disposable.ts";
 import { type CallbackMap, type CallbackName, type EventMap, type EventName, type MethodMap, type MethodName } from "./protocol/index.ts";
@@ -278,6 +294,42 @@ export declare class HostConnection {
     private reply;
 }
 
+// containers.d.ts
+import { type Confirmation } from "./confirmed.ts";
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+import type { Container, ContainerImage, ContainerItem, ContainerNetwork, ContainerVolume, EventMap, LogLine, MethodMap } from "./protocol/index.ts";
+export type ContainerEvent = EventMap["containers.event"];
+export type LogOptions = Omit<MethodMap["containers.logs"]["params"], "id">;
+export type LogPage = MethodMap["containers.logs"]["result"];
+export type RemoveResult = MethodMap["containers.remove"]["result"];
+/**
+ * The containers, volumes, images and networks Jensen can tie to the open project, from Docker and from
+ * its sandbox. Needs `containers` in the manifest, and `containers: "control"` to stop, restart or remove. Environment values are never part of a container.
+ */
+export declare class Containers extends Events<{
+    event: [ContainerEvent];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    list(): Promise<Container[]>;
+    volumes(): Promise<ContainerVolume[]>;
+    images(): Promise<ContainerImage[]>;
+    networks(): Promise<ContainerNetwork[]>;
+    /** One page of a container's logs. Pass the `cursor` of the last page to read the next one. */
+    logs(id: string, options?: LogOptions): Promise<LogPage>;
+    /** Every line of a container's logs, following the cursor until the host has no more. */
+    logsAll(id: string, options?: Omit<LogOptions, "cursor">): AsyncGenerator<LogLine>;
+    /** Stops a container Jensen did not start. Jensen asks the person to confirm. */
+    stop(id: string): Promise<Confirmation>;
+    restart(id: string): Promise<Confirmation>;
+    /**
+     * Removes leftovers. Jensen lists them with their sizes and the person confirms. It refuses anything
+     * running or not tied to the project, and says which items it removed.
+     */
+    remove(items: ContainerItem[]): Promise<RemoveResult>;
+}
+
 // context.d.ts
 import type { App } from "./app.ts";
 export declare function setCurrentApp(app: App | null): void;
@@ -298,25 +350,41 @@ export declare function toDisposable(cleanup: () => void): Disposable;
 
 // editor.d.ts
 import type { HostConnection } from "./connection.ts";
+import { type Disposable } from "./disposable.ts";
 import { Events } from "./events.ts";
-import type { ActiveEditor, Decoration, Position, Range, Tone } from "./protocol/index.ts";
+import type { ActiveEditor, Decoration, DecorationAction, Position, Range, Tone } from "./protocol/index.ts";
 export interface EditorSelection {
     text: string;
     from: Position;
     to: Position;
 }
-/** Decorations Jensen draws on top of the code editor. They are visual only and never change the buffer. */
+export interface DecorationActionEvent {
+    key: string;
+    path: string;
+    actionId: string;
+}
+/**
+ * Decorations Jensen draws on top of the code editor. They are visual only and never change the buffer.
+ * Give one an `action` and Jensen offers it on the decoration, then reports a choice to
+ * `editor.onDecorationAction`.
+ */
 export declare const Decorations: {
     mark: (from: number, to: number, options?: {
         tone?: Tone;
         tooltip?: string;
+        action?: DecorationAction;
     }) => Decoration;
-    line: (line: number, tone?: Tone) => Decoration;
+    line: (line: number, tone?: Tone, options?: {
+        action?: DecorationAction;
+    }) => Decoration;
     gutter: (line: number, text: string, options?: {
         tone?: Tone;
         tooltip?: string;
+        action?: DecorationAction;
     }) => Decoration;
-    hint: (at: number, text: string, tone?: Tone) => Decoration;
+    hint: (at: number, text: string, tone?: Tone, options?: {
+        action?: DecorationAction;
+    }) => Decoration;
 };
 /**
  * The code editor. Reading needs `editor: "read"` in the manifest, changing the buffer needs `"write"`.
@@ -336,6 +404,7 @@ export declare class Editor extends Events<{
     save: [{
         path: string;
     }];
+    "decoration-action": [DecorationActionEvent];
 }> {
     private readonly host;
     constructor(host: HostConnection);
@@ -353,6 +422,11 @@ export declare class Editor extends Events<{
     insert(text: string, at?: number): Promise<null>;
     save(path?: string): Promise<null>;
     decorate(key: string, path: string, decorations: Decoration[]): Promise<null>;
+    /** Hears the action a person chose on one of the decorations set under `key`. */
+    onDecorationAction(key: string, callback: (event: {
+        path: string;
+        actionId: string;
+    }) => void): Disposable;
     clearDecorations(key: string): Promise<null>;
 }
 
@@ -403,8 +477,9 @@ export interface FileChange {
 }
 /**
  * The project's files. Every path is relative to the project root and has to fall inside a scope
- * listed under `fs` in the manifest: a folder such as "docs", a file type such as "*.png", or "." for
- * every file. Jensen enforces the scopes below the plugin and not in it, after the user consents.
+ * listed under `fs` in the manifest: a folder such as "docs", a file type such as "*.png", a file name
+ * pattern such as "Dockerfile*", or "." for every file. Scopes under `fsRead` reach only the read methods.
+ * Jensen enforces the scopes below the plugin and not in it, after the user consents.
  */
 export declare class Files extends Events<{
     create: [FileChange];
@@ -437,17 +512,21 @@ export { Backend, type BackendResult } from "./backend.ts";
 export { type PackageJson, type Problem, validatePackage } from "./cli/validate.ts";
 export { Commands, Keymap } from "./commands.ts";
 export { Component } from "./component.ts";
+export type { Confirmation } from "./confirmed.ts";
 export { HostConnection } from "./connection.ts";
+export { type ContainerEvent, Containers, type LogOptions, type LogPage, type RemoveResult, } from "./containers.ts";
 export { type Disposable, DisposableStore, toDisposable } from "./disposable.ts";
-export { Decorations, Editor, type EditorSelection } from "./editor.ts";
+export { type DecorationActionEvent, Decorations, Editor, type EditorSelection, } from "./editor.ts";
 export { HostError, NotInJensenError } from "./errors.ts";
 export { type EventRef, Events } from "./events.ts";
 export { type FileChange, FileEntry, FileSystemEntry, Files, FolderEntry } from "./files.ts";
 export { CustomPaneView, type PaneContext, type PaneOptions, PaneView, type PaneViewConstructor, } from "./pane.ts";
-export { type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
+export { type DataOptions, type MenuContexts, type MenuTarget, Plugin, requireApiVersion, } from "./plugin.ts";
 export * from "./protocol/index.ts";
 export type { CommandSpec } from "./registry.ts";
+export { Run, type RunTarget } from "./run.ts";
 export { Git, Graph, Knowledge, Net } from "./services.ts";
+export { type SessionChip, Sessions, type WorktreeRemoval, Worktrees } from "./sessions.ts";
 export { ButtonComponent, ColorComponent, DropdownComponent, NumberComponent, Setting, SettingContainer, SettingTab, SliderComponent, TextAreaComponent, TextComponent, ToggleComponent, } from "./settings.ts";
 export { type StartOptions, start } from "./start.ts";
 export { TestHost, type TestHostOptions } from "./testing.ts";
@@ -456,7 +535,7 @@ export type { UiNode } from "./ui/index.ts";
 export * as ui from "./ui/index.ts";
 export { ChoiceModal, ConfirmModal, Menu, MenuItem, Notice, type NoticeOptions, PromptModal, StatusBarItem, SuggestModal, } from "./ui.ts";
 export { Viewer, type ViewerFile, type ViewerMatch } from "./viewer.ts";
-export { type LayoutChange, type OpenPaneOptions, PaneLeaf, Workspace } from "./workspace.ts";
+export { type LayoutChange, type OpenPaneOptions, type PaneBadge, PaneLeaf, Workspace, } from "./workspace.ts";
 
 // pane.d.ts
 import type { App } from "./app.ts";
@@ -544,6 +623,10 @@ export interface MenuContexts {
     };
 }
 export type ApiVersion = typeof API_VERSION;
+/** `project` keeps the data apart for each project. The default, `global`, is shared by all of them. */
+export interface DataOptions {
+    scope?: "global" | "project";
+}
 /**
  * The one class a plugin extends. Register what the plugin adds in `onload()`; everything registered
  * through it is removed again when the plugin unloads.
@@ -564,8 +647,8 @@ export declare abstract class Plugin extends Component {
     get id(): string;
     /** The `when` that limits a hotkey to one of this plugin's panes. */
     paneFocus(paneId: string): string;
-    loadData<T = unknown>(): Promise<T | null>;
-    saveData(data: unknown): Promise<null>;
+    loadData<T = unknown>(options?: DataOptions): Promise<T | null>;
+    saveData(data: unknown, options?: DataOptions): Promise<null>;
     addCommand(spec: CommandSpec): Disposable;
     registerPane<S = unknown>(id: string, view: PaneViewConstructor<S>, options: PaneOptions): Disposable;
     addSettingTab(tab: SettingTab): Disposable;
@@ -644,6 +727,30 @@ export declare class Registry {
     owner?: Component;
 }
 
+// run.d.ts
+import { type Confirmation } from "./confirmed.ts";
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+import type { RunInstance, RunService } from "./protocol/index.ts";
+export interface RunTarget {
+    serviceId: string;
+    sessionId?: string;
+}
+/** Run's detected services and the instances it started, or that were started outside Jensen. Needs `run` in the manifest, and `run: "control"` to start, stop or restart. */
+export declare class Run extends Events<{
+    change: [RunInstance];
+    remove: [string];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    services(): Promise<RunService[]>;
+    list(): Promise<RunInstance[]>;
+    /** Starts a service through Run. Jensen asks the person to confirm, and the answer says whether they did. */
+    start(target: RunTarget): Promise<Confirmation>;
+    stop(target: RunTarget): Promise<Confirmation>;
+    restart(target: RunTarget): Promise<Confirmation>;
+}
+
 // serialize.d.ts
 /** Turns the functions a pane puts in its tree into handler ids Jensen can call back. */
 export declare class HandlerScope {
@@ -703,6 +810,39 @@ export declare class Net {
     }>;
 }
 export {};
+
+// sessions.d.ts
+import { type Confirmation } from "./confirmed.ts";
+import type { HostConnection } from "./connection.ts";
+import { Events } from "./events.ts";
+import type { EventMap, MethodMap, Session, Worktree } from "./protocol/index.ts";
+export type WorktreeRemoval = EventMap["worktrees.removed"];
+export type SessionChip = Omit<MethodMap["sessions.setChip"]["params"], "sessionId">;
+/** The project's sessions, one per agent working in its own worktree. Needs `sessions` in the manifest. */
+export declare class Sessions extends Events<{
+    change: [Session];
+    remove: [string];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    list(): Promise<Session[]>;
+    /** Puts a short chip on the session's card, replacing the one this plugin put there before. */
+    setChip(sessionId: string, chip: SessionChip): Promise<void>;
+    clearChip(sessionId: string): Promise<void>;
+    /** Focuses the session's pane. */
+    open(sessionId: string): Promise<void>;
+    /** Offers text to a session. Jensen shows it and asks the person before it is delivered. */
+    sendContext(sessionId: string, text: string): Promise<Confirmation>;
+}
+/** The project's git worktrees and the session that owns each. Needs `sessions` in the manifest. */
+export declare class Worktrees extends Events<{
+    change: [Worktree];
+    remove: [WorktreeRemoval];
+}> {
+    private readonly host;
+    constructor(host: HostConnection);
+    list(): Promise<Worktree[]>;
+}
 
 // settings.d.ts
 import type { App } from "./app.ts";
@@ -862,14 +1002,30 @@ export declare class Theme extends Events<{
 // ui.d.ts
 import type { App } from "./app.ts";
 import type { HostConnection } from "./connection.ts";
-import type { Severity, Tone } from "./protocol/index.ts";
+import { type Disposable } from "./disposable.ts";
+import type { NoticeAction, Severity, Tone } from "./protocol/index.ts";
 export interface NoticeOptions {
     severity?: Severity;
     timeoutMs?: number;
+    /** Buttons on the toast. Listen for the one pressed with `notice.onAction`. */
+    actions?: NoticeAction[];
 }
-/** A toast. `new Notice("Saved")` works anywhere inside a running plugin. */
+type ActionListener = (actionId: string) => void;
+/** Hands a pressed toast button to the notice that showed it. Called by the SDK when Jensen reports one. */
+export declare function deliverNoticeAction(app: App, noticeId: string, actionId: string): void;
+/**
+ * A toast. `new Notice("Saved")` works anywhere inside a running plugin. With `actions` it shows buttons,
+ * and `onAction` hears which one was pressed, which needs a Jensen that supports them. Dispose the
+ * listener when the plugin no longer cares: Jensen keeps no record of a toast once its last listener is gone.
+ */
 export declare class Notice {
+    private readonly listeners;
+    private readonly app;
+    private id;
     constructor(message: string, options?: NoticeOptions);
+    onAction(callback: ActionListener): Disposable;
+    private track;
+    private untrack;
 }
 export declare class ConfirmModal {
     private readonly app;
@@ -959,6 +1115,7 @@ export declare class StatusBarItem {
     remove(): Promise<void>;
     private push;
 }
+export {};
 
 // viewer.d.ts
 import type { HostConnection } from "./connection.ts";
@@ -991,7 +1148,8 @@ export declare class Viewer extends Events<{
 // workspace.d.ts
 import type { HostConnection } from "./connection.ts";
 import { Events } from "./events.ts";
-import type { Direction, PaneInfo } from "./protocol/index.ts";
+import type { Direction, MethodMap, PaneInfo } from "./protocol/index.ts";
+export type PaneBadge = Omit<MethodMap["workspace.setPaneBadge"]["params"], "paneId">;
 export declare class PaneLeaf {
     private readonly host;
     readonly info: PaneInfo;
@@ -1032,6 +1190,8 @@ export declare class Workspace extends Events<{
     constructor(host: HostConnection);
     currentPage(): Promise<"session" | "code" | "notes">;
     listPanes(): Promise<PaneLeaf[]>;
+    /** Puts a badge on the tab of the pane registered as `paneId`. Pass no count and no text to clear it. */
+    setBadge(paneId: string, badge?: PaneBadge): Promise<void>;
     getLeavesOfType(paneId: string): Promise<PaneLeaf[]>;
     openPane(paneId: string, options?: OpenPaneOptions): Promise<PaneLeaf>;
 }

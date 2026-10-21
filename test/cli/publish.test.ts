@@ -157,6 +157,34 @@ describe("assemble with a backend", () => {
     }
   });
 
+  test("writes the new permissions only when the plugin asks for them", () => {
+    const { dir, pkg } = project();
+    try {
+      const plain = JSON.parse(assemble(dir, pkg).manifestJson);
+      expect(Object.keys(plain.permissions)).not.toContain("sessions");
+      expect(Object.keys(plain.permissions)).not.toContain("run");
+      expect(Object.keys(plain.permissions)).not.toContain("containers");
+      expect(Object.keys(plain.permissions)).not.toContain("fsRead");
+
+      const block = {
+        ...pkg.jensen,
+        permissions: {
+          sessions: true,
+          run: "control",
+          containers: "none",
+          fsRead: ["Dockerfile*"],
+        },
+      };
+      const asked = JSON.parse(assemble(dir, { ...pkg, jensen: block }).manifestJson);
+      expect(asked.permissions.sessions).toBe(true);
+      expect(asked.permissions.run).toBe("control");
+      expect(asked.permissions.fsRead).toEqual(["Dockerfile*"]);
+      expect(Object.keys(asked.permissions)).not.toContain("containers");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test("refuses a backend that was never built", () => {
     const { dir, pkg } = project();
     try {
