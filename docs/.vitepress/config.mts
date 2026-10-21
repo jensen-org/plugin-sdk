@@ -21,6 +21,8 @@ export default defineConfig({
           { text: "Settings", link: "/guide/settings" },
           { text: "The editor", link: "/guide/editor" },
           { text: "Files", link: "/guide/files" },
+          { text: "Viewer toolbars", link: "/guide/viewers" },
+          { text: "A Rust backend", link: "/guide/backend" },
           { text: "The theme", link: "/guide/theme" },
           { text: "Menus and the status strip", link: "/guide/menus" },
           { text: "Testing", link: "/guide/testing" },

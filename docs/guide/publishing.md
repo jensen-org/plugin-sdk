@@ -10,8 +10,9 @@ It does four things:
 
 1. Validates the `jensen` block of `package.json` and requires a `README.md`.
 2. Builds `main.js` (pass `--no-build` to keep the one you already built, `--minify` to shrink it).
-3. Writes `release/` with `manifest.json`, `main.js` and `README.md`. The manifest pins every other asset with a
-   sha256, so the manifest checksum vouches for the whole download.
+3. Writes `release/` with `manifest.json`, `main.js` and `README.md`, plus the backend `.wasm` when the plugin
+   has one. The manifest pins every other asset with a sha256, so the manifest checksum vouches for the
+   whole download.
 4. Prints the plugin store entry, validated against the store schema.
 
 Your README is shown before anyone installs, so say what the plugin does and why it asks for each

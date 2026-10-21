@@ -1,3 +1,4 @@
+import { fromBase64, toBase64 } from "./base64.ts";
 import type { HostConnection } from "./connection.ts";
 import { type Disposable, toDisposable } from "./disposable.ts";
 import { Events } from "./events.ts";
@@ -39,8 +40,9 @@ function join(folder: string, name: string): string {
 }
 
 /**
- * The project's files. Every path is relative to the project root and has to sit inside a directory
- * listed under `fs` in the manifest, which Jensen enforces below the plugin and not in it.
+ * The project's files. Every path is relative to the project root and has to fall inside a scope
+ * listed under `fs` in the manifest: a folder such as "docs", a file type such as "*.png", or "." for
+ * every file. Jensen enforces the scopes below the plugin and not in it, after the user consents.
  */
 export class Files extends Events<{
   create: [FileChange];
@@ -64,6 +66,16 @@ export class Files extends Events<{
 
   write(path: string, contents: string): Promise<null> {
     return this.host.call("fs.write", { path, contents });
+  }
+
+  /** Reads a file of any format, such as an image. */
+  async readBytes(path: string): Promise<Uint8Array> {
+    return fromBase64(await this.host.call("fs.readBytes", { path }));
+  }
+
+  /** Writes bytes to a file, creating parent folders. Open tabs on the path refresh. */
+  writeBytes(path: string, data: Uint8Array): Promise<null> {
+    return this.host.call("fs.writeBytes", { path, data: toBase64(data) });
   }
 
   async list(path: string): Promise<Array<FileEntry | FolderEntry>> {

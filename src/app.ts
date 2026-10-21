@@ -1,4 +1,5 @@
 import { AppSettings } from "./app-settings.ts";
+import { Backend } from "./backend.ts";
 import { Commands, Keymap } from "./commands.ts";
 import type { HostConnection } from "./connection.ts";
 import { Editor } from "./editor.ts";
@@ -6,6 +7,7 @@ import { Files } from "./files.ts";
 import type { MethodMap, MethodName } from "./protocol/index.ts";
 import { Git, Graph, Knowledge, Net } from "./services.ts";
 import { Theme } from "./theme.ts";
+import { Viewer } from "./viewer.ts";
 import { Workspace } from "./workspace.ts";
 
 export type Hello = MethodMap["plugin.hello"]["result"];
@@ -17,6 +19,8 @@ const REGISTRATIONS = new Set<MethodName>([
   "commands.unregister",
   "settings.registerTab",
   "settings.unregisterTab",
+  "viewer.registerToolbar",
+  "viewer.unregisterToolbar",
   "ui.registerMenu",
   "ui.unregisterMenu",
   "ui.setStatus",
@@ -29,7 +33,8 @@ const REGISTRATIONS = new Set<MethodName>([
 
 /**
  * The object graph a plugin works through: the workspace, the editor, the project's files, the theme,
- * commands and settings, plus the code graph, knowledge base, git and network when the manifest asks.
+ * commands and settings, the file viewers and the plugin's own backend, plus the code graph, knowledge
+ * base, git and network when the manifest asks.
  */
 export class App {
   readonly workspace: Workspace;
@@ -43,6 +48,8 @@ export class App {
   readonly knowledge: Knowledge;
   readonly git: Git;
   readonly net: Net;
+  readonly backend: Backend;
+  readonly viewer: Viewer;
 
   constructor(
     readonly connection: HostConnection,
@@ -59,6 +66,8 @@ export class App {
     this.knowledge = new Knowledge(connection);
     this.git = new Git(connection);
     this.net = new Net(connection);
+    this.backend = new Backend(connection);
+    this.viewer = new Viewer(connection);
   }
 
   get pluginId(): string {

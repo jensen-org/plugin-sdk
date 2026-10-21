@@ -63,3 +63,48 @@ describe("the bundle entry", () => {
     );
   });
 });
+
+describe("validatePackage for backends", () => {
+  const base = {
+    name: "x",
+    version: "1.0.0",
+    description: "d",
+    author: "a",
+  };
+  const block = (extra: Record<string, unknown>) => ({
+    ...base,
+    jensen: { id: "dev.me.x", minAppVersion: "0.3.0", ...extra },
+  });
+  const fields = (extra: Record<string, unknown>) =>
+    validatePackage(block(extra)).map((problem) => problem.field);
+
+  test("accepts file type scopes and a dot for every file", () => {
+    for (const scope of ["*.png", "*", ".", "src"]) {
+      expect(fields({ permissions: { fs: [scope] } })).toEqual([]);
+    }
+    for (const scope of ["**", "*.", "src/*.png", "../x"]) {
+      expect(fields({ permissions: { fs: [scope] } })).toContain("jensen.permissions.fs");
+    }
+  });
+
+  test("ties the backend permission, the wasm path and the tools together", () => {
+    expect(fields({ backend: "backend.wasm", permissions: { backend: true } })).toEqual([]);
+    expect(fields({ backend: "backend.wasm" })).toContain("jensen.permissions.backend");
+    expect(fields({ permissions: { backend: true } })).toContain("jensen.backend");
+    expect(fields({ backend: "../b.wasm", permissions: { backend: true } })).toContain(
+      "jensen.backend",
+    );
+    expect(fields({ tools: [], permissions: {} })).toEqual([]);
+    expect(
+      fields({
+        tools: [{ name: "Bad", description: "", inputSchema: 1 }],
+        backend: "b.wasm",
+        permissions: { backend: true },
+      }),
+    ).toEqual([
+      "jensen.tools[0].name",
+      "jensen.tools[0].description",
+      "jensen.tools[0].inputSchema",
+    ]);
+  });
+});

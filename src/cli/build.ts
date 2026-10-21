@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { build, context } from "esbuild";
@@ -63,7 +64,15 @@ export function checkProject(cwd: string): Problem[] {
   return problems;
 }
 
+export function buildBackend(cwd: string, pkg: PackageJson): void {
+  const command = pkg.jensen?.backendBuild;
+  if (typeof command !== "string" || command === "") return;
+  const result = spawnSync(command, { cwd, shell: true, stdio: "inherit" });
+  if (result.status !== 0) throw new Error(`the backend build failed: ${command}`);
+}
+
 export async function buildOnce(options: BuildOptions): Promise<void> {
+  buildBackend(options.cwd, readPackage(options.cwd));
   const entry = entryFor(options.cwd, readPackage(options.cwd));
   await build(settings(options, entry));
 }

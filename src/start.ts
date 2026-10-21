@@ -87,9 +87,25 @@ function wire(plugin: Plugin, app: App): void {
     if (instance?.view instanceof PaneView) await instance.view.onClose();
     return null;
   });
+  host.handle("viewer.render", async ({ toolbarId, path }) => {
+    const registration = registry.viewerToolbars.get(toolbarId);
+    if (!registration) throw new Error(`no viewer toolbar '${toolbarId}'`);
+    const nodes = await registration.render({ path });
+    const scope = new HandlerScope(registry.ids.next);
+    const children = scope.serialize(nodes) as never;
+    registration.scope = scope;
+    return { children };
+  });
   host.handle("node.event", async ({ handler, payload }) => {
     for (const instance of registry.instances.values()) {
       const found = instance.scope?.get(handler);
+      if (found) {
+        await found(payload);
+        return null;
+      }
+    }
+    for (const registration of registry.viewerToolbars.values()) {
+      const found = registration.scope?.get(handler);
       if (found) {
         await found(payload);
         return null;

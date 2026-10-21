@@ -16,6 +16,7 @@
     "workspace": true,
     "theme": false,
     "settings": false,
+    "backend": false,
     "editor": "read",
     "fs": [
       "docs"

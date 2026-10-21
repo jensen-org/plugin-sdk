@@ -38,6 +38,12 @@
     "author": { "type": "string", "minLength": 1, "description": "Author name." },
     "entry": { "$ref": "#/$defs/entry" },
     "permissions": { "$ref": "#/$defs/permissions" },
+    "tools": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/tool" },
+      "description": "Tools the plugin's backend offers to AI agents. Each is served by the backend method of the same name."
+    },
     "dist": {
       "type": "object",
       "additionalProperties": false,
@@ -59,11 +65,25 @@
         "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }
     },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "inputSchema"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "description": { "type": "string", "minLength": 1 },
+        "inputSchema": { "type": "object" }
+      }
+    },
     "entry": {
       "type": "object",
       "additionalProperties": false,
       "required": ["main"],
       "properties": {
+        "backend": {
+          "type": "string",
+          "description": "An optional WebAssembly module (wasm32-unknown-unknown) relative to the plugin directory. Called through backend.call, and by AI agents for the tools the manifest declares."
+        },
         "main": {
           "type": "string",
           "description": "The single bundle, relative to the plugin directory. It runs headless for logic and again inside a sandboxed frame for custom panes."
@@ -84,6 +104,7 @@
           "description": "Switch the active theme and register themes."
         },
         "settings": { "type": "boolean", "description": "Read and write Jensen's own settings." },
+        "backend": { "type": "boolean", "description": "Run the plugin's WebAssembly backend." },
         "editor": {
           "enum": ["none", "read", "write"],
           "description": "Editor access: read the buffer and selection, or also edit it."

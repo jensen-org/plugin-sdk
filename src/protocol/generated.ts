@@ -5,7 +5,7 @@ export const API_VERSION = 1 as const;
 export const ERROR_CODES = ["bad_request","permission_denied","not_found","failed","cancelled","rate_limited","too_busy","killed","io_budget_exceeded","unsupported"] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
-export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "network";
+export type Capability = "none" | "graph" | "knowledge" | "git" | "workspace" | "theme" | "settings" | "editor:read" | "editor:write" | "fs" | "backend" | "network";
 
 export type Handler = { "handler": string };
 
@@ -84,6 +84,7 @@ export interface MethodMap {
   "editor.getText": { params: { "path"?: string }; result: string };
   "editor.getSelection": { params: Record<string, never>; result: { "text": string; "from": Position; "to": Position } };
   "editor.openFile": { params: { "path": string; "line"?: number; "column"?: number }; result: null };
+  "editor.retarget": { params: { "from": string; "to": string }; result: null };
   "editor.replaceRange": { params: { "from": number; "to": number; "text": string }; result: null };
   "editor.replaceSelection": { params: { "text": string }; result: null };
   "editor.insert": { params: { "text": string; "at"?: number }; result: null };
@@ -92,6 +93,12 @@ export interface MethodMap {
   "editor.clearDecorations": { params: { "key": string }; result: null };
   "fs.read": { params: { "path": string }; result: string };
   "fs.write": { params: { "path": string; "contents": string }; result: null };
+  "fs.readBytes": { params: { "path": string }; result: string };
+  "fs.writeBytes": { params: { "path": string; "data": string }; result: null };
+  "backend.call": { params: { "method": string; "input"?: unknown }; result: { "result": unknown; "touched": string[] } };
+  "viewer.registerToolbar": { params: { "id": string; "kinds"?: string[]; "extensions"?: string[] }; result: null };
+  "viewer.unregisterToolbar": { params: { "id": string }; result: null };
+  "viewer.refreshToolbar": { params: { "id": string }; result: null };
   "fs.list": { params: { "path": string }; result: DirEntry[] };
   "fs.stat": { params: { "path": string }; result: FileStat | null };
   "fs.mkdir": { params: { "path": string }; result: null };
@@ -158,6 +165,7 @@ export const METHOD_CAPABILITY: Record<MethodName, Capability> = {
   "editor.getText": "editor:read",
   "editor.getSelection": "editor:read",
   "editor.openFile": "editor:read",
+  "editor.retarget": "editor:read",
   "editor.replaceRange": "editor:write",
   "editor.replaceSelection": "editor:write",
   "editor.insert": "editor:write",
@@ -166,6 +174,12 @@ export const METHOD_CAPABILITY: Record<MethodName, Capability> = {
   "editor.clearDecorations": "editor:read",
   "fs.read": "fs",
   "fs.write": "fs",
+  "fs.readBytes": "fs",
+  "fs.writeBytes": "fs",
+  "backend.call": "backend",
+  "viewer.registerToolbar": "editor:read",
+  "viewer.unregisterToolbar": "editor:read",
+  "viewer.refreshToolbar": "editor:read",
   "fs.list": "fs",
   "fs.stat": "fs",
   "fs.mkdir": "fs",
@@ -207,6 +221,7 @@ export interface CallbackMap {
   "settings.action": { params: { "tabId": string; "key": string }; result: null };
   "menu.build": { params: { "menuId": string; "context": Record<string, unknown> }; result: MenuItem[] };
   "menu.select": { params: { "menuId": string; "itemId": string; "context": Record<string, unknown> }; result: null };
+  "viewer.render": { params: { "toolbarId": string; "path": string }; result: { "children": Node[] } };
   "status.click": { params: { "id": string }; result: null };
   "markdown.render": { params: { "id": string; "source": string }; result: { "html": string } };
   "plugin.unload": { params: Record<string, never>; result: null };
@@ -222,6 +237,7 @@ export interface EventMap {
   "editor.activeChanged": ActiveEditor | null;
   "editor.changed": { "path": string | null; "lineCount": number };
   "editor.selectionChanged": { "path": string | null; "selection": Range; "cursor": Position };
+  "viewer.activeChanged": { "path": string; "kind": string } | null;
   "editor.saved": { "path": string };
   "theme.changed": ActiveTheme;
   "fs.changed": { "watchId": string; "kind": "create" | "modify" | "delete" | "rename"; "path": string; "from"?: string };
@@ -239,6 +255,7 @@ export const EVENT_CAPABILITY: Record<EventName, Capability> = {
   "editor.activeChanged": "editor:read",
   "editor.changed": "editor:read",
   "editor.selectionChanged": "editor:read",
+  "viewer.activeChanged": "editor:read",
   "editor.saved": "editor:read",
   "theme.changed": "none",
   "fs.changed": "fs",

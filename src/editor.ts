@@ -65,6 +65,11 @@ export class Editor extends Events<{
     return this.host.call("editor.openFile", { path, ...position });
   }
 
+  /** Moves an open tab to another path, for example after the plugin converted the file. */
+  retarget(from: string, to: string): Promise<null> {
+    return this.host.call("editor.retarget", { from, to });
+  }
+
   replaceRange(from: number, to: number, text: string): Promise<null> {
     return this.host.call("editor.replaceRange", { from, to, text });
   }
