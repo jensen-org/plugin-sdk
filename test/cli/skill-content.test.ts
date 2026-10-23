@@ -107,8 +107,32 @@ describe("the bundled skill", () => {
     }
   });
 
+  test("covers the Rust backend, viewer toolbars and binary files", () => {
+    for (const term of [
+      "jensen-plugin-backend",
+      "app.backend",
+      "registerViewerToolbar",
+      "readBytes",
+      "tools",
+      "references/backend.md",
+      "references/viewers-and-binary-files.md",
+    ]) {
+      expect(skillText, term).toContain(term);
+    }
+    const backend = read(join(skillDir, "references/backend.md"));
+    for (const term of [
+      "wasm32-unknown-unknown",
+      "backendBuild",
+      "export!",
+      "inputSchema",
+      "30 seconds",
+    ]) {
+      expect(backend, term).toContain(term);
+    }
+  });
+
   test("has complete samples to compile", () => {
-    expect(samples().length).toBeGreaterThanOrEqual(8);
+    expect(samples().length).toBeGreaterThanOrEqual(11);
   });
 
   test("every sample marked as complete typechecks against the package source", () => {

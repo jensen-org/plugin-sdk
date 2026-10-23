@@ -1,8 +1,9 @@
 # Testing with TestHost
 
 `TestHost` from `@jensen-org/plugin-sdk/testing` stands in for Jensen. It records every call the plugin makes,
-answers them, and lets a test play the host's side. It does not enforce permissions, so a test cannot prove a
-manifest is complete. Check permissions by reading the code against [permissions](permissions.md).
+answers them, and lets a test play the host's side. It does not enforce permissions unless you pass
+`permissions`, so by default a test cannot prove a manifest is complete. Pass the capabilities the manifest
+grants, or check them by reading the code against [permissions](permissions.md).
 
 The tests below run with `bun test`. The same shape works with any runner.
 
@@ -46,11 +47,45 @@ test("answers a file read", async () => {
 });
 ```
 
+## Testing a plugin that has a backend
+
+`TestHost` answers `backend.call` like any method, so the TypeScript half is tested without wasm. The Rust half
+is tested natively, see [backend](backend.md).
+
+```ts check
+import { expect, test } from "bun:test";
+import { Plugin, start } from "@jensen-org/plugin-sdk";
+import { TestHost } from "@jensen-org/plugin-sdk/testing";
+
+class Shrinker extends Plugin {
+  onload() {
+    this.addCommand({
+      id: "shrink",
+      name: "Shrink",
+      callback: async () => {
+        await this.app.backend.call("shrink", { path: "a.png" });
+      },
+    });
+  }
+}
+
+test("asks the backend to shrink the file", async () => {
+  const host = new TestHost({ permissions: ["backend"] });
+  host.respondTo("backend.call", () => ({ result: { before: 10 }, touched: ["a.png"] }));
+  await start(Shrinker, { connection: host.connection });
+
+  await host.request("command.run", { id: "shrink" });
+
+  expect(host.callsTo("backend.call")).toEqual([{ method: "shrink", input: { path: "a.png" } }]);
+  host.close();
+});
+```
+
 ## API
 
 | Member | Use |
 |---|---|
-| `new TestHost({ respond, surface, asGlobalPort })` | `respond` maps method names to answer functions. `surface` defaults to headless |
+| `new TestHost({ respond, surface, asGlobalPort, permissions })` | `respond` maps method names to answer functions. `surface` defaults to headless. `permissions` is a list of capabilities such as `"backend"`: when set, a call that needs another one fails with `permission_denied` |
 | `host.connection` | pass as `start(Plugin, { connection: host.connection })` |
 | `host.respondTo(method, fn)` | answer a protocol method. Unanswered methods resolve to `null` |
 | `host.callsTo(method)` | the params of each call the plugin made to that method, in order |

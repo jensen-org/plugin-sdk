@@ -53,6 +53,20 @@ export default class Safe extends Plugin {
 | `the connection to Jensen is closed` or `the connection closed` | a call was made after unload. Stop timers and listeners in cleanup |
 | `NotInJensenError` | plugin code ran without Jensen's port. Run it in Jensen, or use `TestHost` |
 
+## Backend errors
+
+| Message | Cause |
+|---|---|
+| `permission_denied`, capability `backend` | `permissions.backend` is missing, or the user refused it |
+| `the backend has no method '<name>'` | the call or the tool names a method the Rust `register` never added |
+| `the input is not valid json: ...` | the backend got something that is not JSON |
+| any text your method returned as `Err` | your own message, shown to the user and handed to an agent |
+| a refusal from `fs::read`, `fs::write` or `host_api::call` | the path is outside the `fs` scopes, or the method's permission was not granted. The text is Jensen's |
+| the call is stopped | it ran past 30 seconds. Split the work, or use `wait::until` with at most 25 seconds |
+
+If a backend misbehaves after an SDK upgrade, pin the crate `tag` to the SDK version and rebuild with
+`jensen-plugin build`.
+
 ## Where errors go
 
 - A throw in `onload()` is announced to the user and the plugin is not loaded. Put risky work in a command or

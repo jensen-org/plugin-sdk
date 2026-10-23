@@ -10,8 +10,10 @@ It does four things:
 
 1. Validates the `jensen` block of `package.json` and requires `README.md`.
 2. Builds `main.js` (`--no-build` keeps the one you already built, `--minify` shrinks it).
-3. Writes `release/` with `manifest.json`, `main.js` and `README.md`. The manifest pins the other assets with a
-   sha256, so the manifest checksum vouches for the whole download.
+3. Writes `release/` with `manifest.json`, `main.js` and `README.md`, plus `backend.wasm` when the plugin has a
+   backend, and `tools` in the manifest. The manifest pins the other assets with a sha256, so the manifest
+   checksum vouches for the whole download. A declared backend that is not built stops the publish, run `build`
+   so `jensen.backendBuild` runs.
 4. Prints the plugin store entry, validated against the store rules.
 
 ## The store entry
@@ -46,7 +48,7 @@ using the sha256 that `publish` prints.
 
 | Command | Does |
 |---|---|
-| `jensen-plugin create [dir] [--yes] [--name n] [--id id] [--description d] [--author a] [--no-skill]` | scaffold a plugin and install this skill into it |
+| `jensen-plugin create [dir] [--yes] [--name n] [--id id] [--description d] [--author a] [--backend] [--no-skill]` | scaffold a plugin and install this skill into it |
 | `jensen-plugin build [--minify]` | validate then bundle `src/main.ts` into `main.js` (esm, es2022, browser) |
 | `jensen-plugin dev [--publish]` | rebuild `main.js` on every change |
 | `jensen-plugin validate` | check the `jensen` block and README without building |
@@ -59,6 +61,12 @@ The entry file is `src/main.ts`, `src/main.tsx` or `src/main.js`, or whatever `j
 `jensen.minAppVersion` is the oldest Jensen the plugin runs on. The protocol version is `1`, and a plugin built
 for another protocol version is refused with a message that says so. Bump `version` for every release, the tag
 and store entry derive from it.
+
+## Pre-release versions
+
+`version` may be a semver pre-release such as `1.0.0-dev.5`, without build metadata. `--release` marks the GitHub
+release as a pre-release. The official store only takes `major.minor.patch`, so `--store-pr` refuses a
+pre-release version: publish it to a private registry, or drop `--store-pr`.
 
 ## Your own registry
 
