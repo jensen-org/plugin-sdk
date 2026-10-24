@@ -1,10 +1,13 @@
 import { HostConnection } from "./connection.ts";
+import { HostError } from "./errors.ts";
 import {
   API_VERSION,
   type CallbackMap,
   type CallbackName,
+  type Capability,
   type EventMap,
   type EventName,
+  METHOD_CAPABILITY,
   type MethodMap,
   type MethodName,
   type Surface,
@@ -19,6 +22,11 @@ export interface TestHostOptions {
    */
   asGlobalPort?: boolean;
   surface?: Surface;
+  /**
+   * The capabilities the plugin's manifest grants. When set, a call to a method that needs another
+   * capability fails with `permission_denied`, so a test can check the plugin's consent assumptions.
+   */
+  permissions?: Capability[];
   respond?: {
     [K in MethodName]?: (
       params: MethodMap[K]["params"],
@@ -33,7 +41,7 @@ interface Wire {
   method?: string;
   params?: unknown;
   result?: unknown;
-  error?: { code: string; message: string };
+  error?: { code: string; message: string; capability?: string };
 }
 
 /**
@@ -45,6 +53,7 @@ export class TestHost {
   readonly calls: Array<{ method: string; params: unknown }> = [];
   private readonly hostPort: MessagePort;
   private readonly responders = new Map<string, Responder>();
+  private readonly granted?: Set<Capability>;
   private seq = 0;
   private readonly pending = new Map<
     number,
@@ -54,6 +63,7 @@ export class TestHost {
   constructor(options: TestHostOptions = {}) {
     const channel = new MessageChannel();
     this.hostPort = channel.port1;
+    if (options.permissions) this.granted = new Set(options.permissions);
     if (options.asGlobalPort) {
       (globalThis as { __jensenPort?: unknown }).__jensenPort = channel.port2;
     } else {
@@ -64,6 +74,7 @@ export class TestHost {
       appVersion: "0.0.0",
       surface: options.surface ?? { kind: "headless" },
       theme: { id: "test", appearance: "dark", tokens: {} },
+      project: { id: "test.project", name: "test" },
     }));
     for (const [method, fn] of Object.entries(options.respond ?? {})) {
       this.responders.set(method, fn as Responder);
@@ -125,6 +136,20 @@ export class TestHost {
     }
     if (message.kind !== "req" || !message.method) return;
     this.calls.push({ method: message.method, params: message.params });
+    const needed = METHOD_CAPABILITY[message.method as MethodName];
+    if (this.granted && needed && needed !== "none" && !this.granted.has(needed)) {
+      this.hostPort.postMessage({
+        v: API_VERSION,
+        id: message.id,
+        kind: "res",
+        error: {
+          code: "permission_denied",
+          message: `capability '${needed}' is not granted`,
+          capability: needed,
+        },
+      });
+      return;
+    }
     const responder = this.responders.get(message.method);
     Promise.resolve()
       .then(() => (responder ? responder(message.params as never) : null))
@@ -142,7 +167,7 @@ export class TestHost {
             id: message.id,
             kind: "res",
             error: {
-              code: "failed",
+              code: cause instanceof HostError ? cause.code : "failed",
               message: cause instanceof Error ? cause.message : String(cause),
             },
           }),

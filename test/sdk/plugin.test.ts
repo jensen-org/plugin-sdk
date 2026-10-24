@@ -593,3 +593,54 @@ describe("the connection", () => {
     await expect(start(Empty as never)).rejects.toThrow("has to run inside Jensen");
   });
 });
+
+describe("project identity and scoped storage", () => {
+  test("reads the project from the handshake", async () => {
+    let seen: unknown;
+    class Reads extends Plugin {
+      override onload() {
+        seen = this.app.project;
+      }
+    }
+    await run(Reads);
+
+    expect(seen).toEqual({ id: "test.project", name: "test" });
+  });
+
+  test("has no project when the host does not send one", async () => {
+    let seen: unknown = "unset";
+    class Reads extends Plugin {
+      override onload() {
+        seen = this.app.project;
+      }
+    }
+    await run(Reads, { respond: { "plugin.hello": () => oldHello } });
+
+    expect(seen).toBeUndefined();
+  });
+
+  test("keeps the default storage global and sends no scope", async () => {
+    const plugin = await run(Empty);
+    await plugin.loadData();
+    await plugin.saveData({ a: 1 });
+
+    expect(host.callsTo("storage.load")).toEqual([{}]);
+    expect(host.callsTo("storage.save")).toEqual([{ data: { a: 1 } }]);
+  });
+
+  test("sends the project scope when asked", async () => {
+    const plugin = await run(Empty);
+    await plugin.loadData({ scope: "project" });
+    await plugin.saveData({ a: 1 }, { scope: "project" });
+
+    expect(host.callsTo("storage.load")).toEqual([{ scope: "project" }]);
+    expect(host.callsTo("storage.save")).toEqual([{ data: { a: 1 }, scope: "project" }]);
+  });
+});
+
+const oldHello = {
+  pluginId: "test.plugin",
+  appVersion: "0.0.0",
+  surface: { kind: "headless" as const },
+  theme: { id: "test", appearance: "dark" as const, tokens: {} },
+};

@@ -5,3 +5,4 @@ dist
 .vitepress/dist
 release
 .DS_Store
+*.bak

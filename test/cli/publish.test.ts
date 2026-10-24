@@ -12,7 +12,7 @@ import {
   sha256Hex,
   validateEntry,
 } from "../../src/cli/publish.ts";
-import type { PackageJson } from "../../src/cli/validate.ts";
+import { type PackageJson, validatePackage } from "../../src/cli/validate.ts";
 
 const fixtures = resolve(import.meta.dir, "../../protocol/fixtures/publish");
 
@@ -90,6 +90,35 @@ describe("validateEntry", () => {
   });
 });
 
+describe("version rule", () => {
+  const accepted = ["0.1.2", "1.0.0", "0.1.2-dev.5", "1.0.0-rc.1", "1.0.0-0.3.7", "1.0.0-x-y-z.--"];
+  const refused = [
+    "1.0",
+    "01.0.0",
+    "1.0.0+build",
+    "1.0.0-dev.5+sha",
+    "1.0.0-",
+    "1.0.0-a..b",
+    "1.0.0-01",
+    "1.0.0foo",
+    "v1.0.0",
+  ];
+  const entry = JSON.parse(read("entry.json"));
+  const pkg = (version: string) => ({ name: "n", version, description: "d", author: "a" });
+
+  test.each(accepted)("validate and publish both accept %s", (version) => {
+    expect(validatePackage(pkg(version)).filter((p) => p.field === "version")).toEqual([]);
+    expect(validateEntry({ ...entry, version }).filter((p) => p.field === "entry.version")).toEqual(
+      [],
+    );
+  });
+
+  test.each(refused)("validate and publish both refuse %s", (version) => {
+    expect(validatePackage(pkg(version)).map((p) => p.field)).toContain("version");
+    expect(validateEntry({ ...entry, version }).map((p) => p.field)).toContain("entry.version");
+  });
+});
+
 describe("GitHub steps", () => {
   const { dir, pkg } = project();
   const published = assemble(dir, pkg);
@@ -100,6 +129,23 @@ describe("GitHub steps", () => {
     expect(args.slice(0, 3)).toEqual(["release", "create", "golden-hello-v1.2.0"]);
     expect(args.filter((a) => a.startsWith(published.releaseDir)).length).toBe(3);
     expect(args).toContain("ada/golden-hello");
+  });
+
+  test("a pre-release is marked as one on GitHub and a release is not", () => {
+    expect(releaseArgs(published.entry, published)).not.toContain("--prerelease");
+    const dev = { ...published.entry, version: "1.2.0-dev.5" };
+    expect(releaseArgs(dev, published)).toContain("--prerelease");
+  });
+
+  test("the store PR refuses a pre-release before it runs anything", () => {
+    const calls: string[][] = [];
+    const exec: Runner = (command, args) => {
+      calls.push([command, ...args]);
+      return "";
+    };
+    const dev = { ...published.entry, version: "1.2.0-dev.5" };
+    expect(() => openStorePr(dev, exec)).toThrow("pre-release");
+    expect(calls).toEqual([]);
   });
 
   test("falls back to the version when the entry has no tag", () => {
@@ -152,6 +198,34 @@ describe("assemble with a backend", () => {
       ]);
       expect(result.assets).toContain("backend.wasm");
       expect(readFileSync(join(dir, "release", "backend.wasm")).length).toBe(4);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("writes the new permissions only when the plugin asks for them", () => {
+    const { dir, pkg } = project();
+    try {
+      const plain = JSON.parse(assemble(dir, pkg).manifestJson);
+      expect(Object.keys(plain.permissions)).not.toContain("sessions");
+      expect(Object.keys(plain.permissions)).not.toContain("run");
+      expect(Object.keys(plain.permissions)).not.toContain("containers");
+      expect(Object.keys(plain.permissions)).not.toContain("fsRead");
+
+      const block = {
+        ...pkg.jensen,
+        permissions: {
+          sessions: true,
+          run: "control",
+          containers: "none",
+          fsRead: ["Dockerfile*"],
+        },
+      };
+      const asked = JSON.parse(assemble(dir, { ...pkg, jensen: block }).manifestJson);
+      expect(asked.permissions.sessions).toBe(true);
+      expect(asked.permissions.run).toBe("control");
+      expect(asked.permissions.fsRead).toEqual(["Dockerfile*"]);
+      expect(Object.keys(asked.permissions)).not.toContain("containers");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

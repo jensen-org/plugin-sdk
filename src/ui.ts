@@ -1,24 +1,75 @@
 import type { App } from "./app.ts";
 import type { HostConnection } from "./connection.ts";
 import { currentApp } from "./context.ts";
-import type { Severity, Tone } from "./protocol/index.ts";
+import { type Disposable, toDisposable } from "./disposable.ts";
+import type { NoticeAction, Severity, Tone } from "./protocol/index.ts";
 
 export interface NoticeOptions {
   severity?: Severity;
   timeoutMs?: number;
+  /** Buttons on the toast. Listen for the one pressed with `notice.onAction`. */
+  actions?: NoticeAction[];
 }
 
-/** A toast. `new Notice("Saved")` works anywhere inside a running plugin. */
+type ActionListener = (actionId: string) => void;
+
+const noticeListeners = new WeakMap<App, Map<string, Set<ActionListener>>>();
+
+/** Hands a pressed toast button to the notice that showed it. Called by the SDK when Jensen reports one. */
+export function deliverNoticeAction(app: App, noticeId: string, actionId: string): void {
+  for (const listener of [...(noticeListeners.get(app)?.get(noticeId) ?? [])]) listener(actionId);
+}
+
+/**
+ * A toast. `new Notice("Saved")` works anywhere inside a running plugin. With `actions` it shows buttons,
+ * and `onAction` hears which one was pressed, which needs a Jensen that supports them. Dispose the
+ * listener when the plugin no longer cares: Jensen keeps no record of a toast once its last listener is gone.
+ */
 export class Notice {
+  private readonly listeners = new Set<ActionListener>();
+  private readonly app: App;
+  private id: string | undefined;
+
   constructor(message: string, options: NoticeOptions = {}) {
     const app = currentApp();
+    this.app = app;
     app
-      .call("ui.notice", { message, severity: options.severity, timeoutMs: options.timeoutMs })
+      .call("ui.notice", {
+        message,
+        severity: options.severity,
+        timeoutMs: options.timeoutMs,
+        actions: options.actions,
+      })
+      .then((id) => {
+        if (typeof id !== "string" || !options.actions?.length) return;
+        this.id = id;
+        if (this.listeners.size > 0) this.track();
+      })
       .catch((cause) => {
         queueMicrotask(() => {
           throw cause;
         });
       });
+  }
+
+  onAction(callback: ActionListener): Disposable {
+    this.listeners.add(callback);
+    if (this.id !== undefined) this.track();
+    return toDisposable(() => {
+      this.listeners.delete(callback);
+      if (this.listeners.size === 0) this.untrack();
+    });
+  }
+
+  private track(): void {
+    if (this.id === undefined) return;
+    const byId = noticeListeners.get(this.app) ?? new Map<string, Set<ActionListener>>();
+    byId.set(this.id, this.listeners);
+    noticeListeners.set(this.app, byId);
+  }
+
+  private untrack(): void {
+    if (this.id !== undefined) noticeListeners.get(this.app)?.delete(this.id);
   }
 }
 

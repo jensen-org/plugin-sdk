@@ -118,6 +118,23 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Hosts the plugin may fetch over https."
+        },
+        "sessions": {
+          "type": "boolean",
+          "description": "Read sessions and worktrees, mark session cards, open a session and hand it context."
+        },
+        "run": {
+          "enum": ["none", "read", "control"],
+          "description": "Run access: read its services and instances, or also start, stop and restart them."
+        },
+        "containers": {
+          "enum": ["none", "read", "control"],
+          "description": "Container access: read containers, volumes, images, networks and logs, or also stop, restart and remove them."
+        },
+        "fsRead": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Scopes the plugin may only read, in the same forms as fs. Writes need fs."
         }
       }
     }

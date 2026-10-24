@@ -4,11 +4,42 @@ Some work does not belong in JavaScript: decoding images, parsing a big file, co
 a **backend**, a Rust program compiled to WebAssembly that Jensen runs in a sandbox. The plugin calls it
 from its UI, and AI agents call the same program through the tools the plugin declares.
 
+## Do you need one?
+
+Most plugins do not. Panes, commands, settings, files and the editor are all in the npm package, and Jensen's
+own engine does that work under the plugin's permissions. Add a backend only for:
+
+- **Heavy work**, such as decoding or re-encoding images, parsing a big file or compressing. It runs at native
+  speed and keeps the webview responsive.
+- **Agent tools**, methods an AI agent can call while Jensen's window is closed. The plugin's JavaScript only
+  runs in the window, so only a backend can answer then.
+
+If neither applies, stay in TypeScript. A backend adds a second language, a second toolchain and a second thing
+to test and publish.
+
+## Prerequisites
+
+- Jensen 0.3.0 or newer, and 0.3.2 for `fs::list` and the `host_api` helpers. Set `minAppVersion` to match.
+- Rust, and the WebAssembly target: `rustup target add wasm32-unknown-unknown`.
+- The crate is not on crates.io. It is fetched from this repository by git tag, and the tag is the SDK version,
+  so keep `@jensen-org/plugin-sdk` and the crate `tag` at the same version.
+
 ```bash
-npx jensen-plugin create my-plugin --backend
+npx @jensen-org/plugin-sdk create my-plugin --backend
 ```
 
-scaffolds a plugin with a backend crate and a viewer toolbar that calls it.
+scaffolds a plugin with a backend crate and a viewer toolbar that calls it:
+
+```
+my-plugin/
+  package.json          the "jensen" block gains backend, backendBuild, tools and the backend permission
+  src/main.ts           the TypeScript half
+  backend/Cargo.toml    depends on jensen-plugin-backend
+  backend/src/lib.rs    the Rust half
+  backend.wasm          the build output, git ignored
+```
+
+`jensen-plugin skill install` adds an agent skill that covers both halves, and `create` installs it for you.
 
 ## Write the backend
 
@@ -18,7 +49,7 @@ scaffolds a plugin with a backend crate and a viewer toolbar that calls it.
 crate-type = ["cdylib"]
 
 [dependencies]
-jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.2.0" }
+jensen-plugin-backend = { git = "https://github.com/jensen-org/plugin-sdk", tag = "v0.3.0" }
 ```
 
 ```rust
@@ -76,6 +107,56 @@ Jensen refreshes any open tab on them, so the file viewer shows the change at on
 Every entry under `tools` is a method of the backend. Agents see them through `list_plugin_tools` and run
 them with `call_plugin_tool`, named `<plugin_id>_<tool>`, even when Jensen's window is closed. Write the
 description for the agent: it decides from it when to call the tool.
+
+## List a folder
+
+`fs::list("docs")` returns the folder's entries as `DirEntry { name, kind, size }`. Under a file type scope
+such as `*.yaml` it shows the folders and the files in scope and nothing else. A backend that imports
+`fs_list` needs a Jensen that provides it (minimum app version to be set when the app ships it), and one that
+never lists a folder keeps loading everywhere.
+
+## Reach Jensen from the backend
+
+`host_api::call(method, params)` runs a protocol method as the plugin, under the same capability checks as
+the frontend, so the backend needs the same manifest permissions. UI methods are refused, and a refusal comes
+back as the host's own message. Typed helpers cover the common ones, and return the structs in
+`jensen_plugin_backend::types` (`RunInstance`, `Container`, `LogPage`, `Session`, `Worktree`) rather than raw
+JSON: `run::list()`, `containers::list()`, `containers::logs(id, &options)`, `sessions::list()`,
+`worktrees::list()`, `run::remove_own()`, `git::history(params)`, `storage::load()` and
+`storage::load_project()`. `git::history` stays a `serde_json::Value`, because the protocol does not type its
+answer. An answer that does not fit its struct is an error that names the method.
+
+`host_api::context()` says who is calling: `caller` is `Caller::Ui` or `Caller::Agent`, with the `plugin_id`,
+`project_id` and, for an agent that called through a session, its `session_id` and `checkout` (that
+session's worktree, relative to the project root).
+
+A backend has no clock, and Jensen stops a backend call that runs longer than 30 seconds, so waiting happens in
+the host: `wait::until(&Condition::Container { id, state: ContainerWait::Healthy }, timeout_ms)` returns `true`
+once the container is running or healthy, a log line matches, or a run reaches a status, and `false` when the
+timeout passes first. The host uses 10 seconds (`wait::DEFAULT_TIMEOUT_MS`) when the call names no timeout and
+cuts a longer one to 25 seconds (`wait::MAX_TIMEOUT_MS`), which leaves the rest of the 30 seconds for the work
+around it. To wait longer, return after each `false` and let the caller ask again.
+
+`run::remove_own()` removes the calling session's own Compose project, with its volumes and built images, and
+is refused when the call has no session. It is the one action that needs no confirmation.
+
+To test without Jensen, answer the host natively:
+
+```rust
+use jensen_plugin_backend::host_api::{CallContext, Caller, set_test_context, set_test_responder};
+
+set_test_context(&CallContext {
+    caller: Caller::Agent,
+    plugin_id: "acme.containers".into(),
+    project_id: "p1".into(),
+    session_id: Some("s1".into()),
+    checkout: None,
+});
+set_test_responder(|method, _params| Ok(serde_json::json!({ "lines": [] })));
+```
+
+`host_call` and `context` need a Jensen that provides them. Until the app ships them, a backend that imports
+them does not load, so the minimum app version is set when they do.
 
 ## What the sandbox allows
 

@@ -1,7 +1,8 @@
 # Jensen plugin SDK
 
 Build extensions for [Jensen](https://github.com/jensen-org/jensen): panes, commands, hotkeys, settings,
-menus, and typed access to the project's files, the code editor, the layout and the theme.
+menus, and typed access to the project's files, the code editor, the layout and the theme, with an optional Rust
+backend.
 
 ```bash
 npx @jensen-org/plugin-sdk create my-plugin
@@ -32,7 +33,9 @@ export default class Hello extends Plugin {
 | `@jensen-org/plugin-sdk/testing` | `TestHost`, a stand in for Jensen in your tests |
 | `jensen-plugin` (bin) | `create`, `build`, `dev`, `validate` and `publish` |
 
-A plugin depends on `@jensen-org/plugin-sdk` and nothing else.
+A plugin depends on `@jensen-org/plugin-sdk` and nothing else. One that needs heavy work or tools for AI agents can
+also ship a Rust backend built with [`jensen-plugin-backend`](crates/jensen-plugin-backend), a crate fetched by git
+tag, see `docs/guide/backend.md`. `create` installs an agent skill that covers both halves.
 
 ## Publish
 

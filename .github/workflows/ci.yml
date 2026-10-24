@@ -21,6 +21,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run docs:build
+      - run: cargo test
+        working-directory: crates/jensen-plugin-backend
   approve:
     if: github.event_name == 'pull_request'
     needs: check

@@ -35,6 +35,7 @@ export default class Safe extends Plugin {
 | `permission_denied` | the capability in `error.capability` was not granted | add the matching key to `jensen.permissions`, see [permissions](permissions.md) |
 | `not_found` | the target does not exist | check the path or id, use `files.exists` first |
 | `failed` | the call was valid and did not work. Also what a throw inside your callback becomes | read the message |
+| `approval_pending` | an action needs the person's approval and nobody has answered yet | ask the person to approve it in Jensen, then retry the identical call within ten minutes |
 | `cancelled` | the call was cancelled | retry if still needed |
 | `unsupported` | Jensen does not serve that method, or the plugin does not handle a callback | `requireApiVersion`, raise `minAppVersion` |
 | `rate_limited`, `too_busy`, `io_budget_exceeded`, `killed` | the plugin hit a budget | batch calls, debounce events, avoid tight loops |
@@ -51,6 +52,20 @@ export default class Safe extends Plugin {
 | `menu '<id>' has no item '<id>' any more` | the menu was rebuilt before the click arrived |
 | `the connection to Jensen is closed` or `the connection closed` | a call was made after unload. Stop timers and listeners in cleanup |
 | `NotInJensenError` | plugin code ran without Jensen's port. Run it in Jensen, or use `TestHost` |
+
+## Backend errors
+
+| Message | Cause |
+|---|---|
+| `permission_denied`, capability `backend` | `permissions.backend` is missing, or the user refused it |
+| `the backend has no method '<name>'` | the call or the tool names a method the Rust `register` never added |
+| `the input is not valid json: ...` | the backend got something that is not JSON |
+| any text your method returned as `Err` | your own message, shown to the user and handed to an agent |
+| a refusal from `fs::read`, `fs::write` or `host_api::call` | the path is outside the `fs` scopes, or the method's permission was not granted. The text is Jensen's |
+| the call is stopped | it ran past 30 seconds. Split the work, or use `wait::until` with at most 25 seconds |
+
+If a backend misbehaves after an SDK upgrade, pin the crate `tag` to the SDK version and rebuild with
+`jensen-plugin build`.
 
 ## Where errors go
 

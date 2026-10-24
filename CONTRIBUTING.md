@@ -5,7 +5,7 @@ bun install
 bun run check
 ```
 
-`bun run check` is the gate: protocol sync, lint, build, typecheck, tests, the API report and the docs build.
+`bun run check` is the gate: protocol sync, lint, build, typecheck, tests and the API report. CI also runs `bun run docs:build` and `cargo test` in `crates/jensen-plugin-backend`.
 
 ## Branches and releases
 

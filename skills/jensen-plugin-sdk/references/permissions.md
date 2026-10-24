@@ -12,15 +12,26 @@ user reads before installing.
 |---|---|---|
 | `workspace` | `true` | register, open, move and close panes, list panes, run and list commands |
 | `editor` | `"none"`, `"read"` or `"write"` | read: buffer, selection, open files, decorations and editor events. write: also replace, insert and save |
-| `fs` | list of relative folders | read and write inside those project folders |
+| `fs` | list of scopes | read and write inside those project folders, file types (`"*.png"`) or file name patterns (`"Dockerfile*"`, `".env*"`) |
+| `fsRead` | list of scopes | the same scopes, read only. Writes need `fs`. Prefer it for files you only inspect |
+| `backend` | `true` | run the plugin's own WebAssembly backend and offer its `tools` to AI agents. Required by `jensen.backend`, and `jensen.backend` is required by it. See [backend](backend.md) |
+| `sessions` | `true` | `app.sessions`, `app.worktrees`, session chips, opening a session, handing it context |
+| `run` | `"none"`, `"read"` or `"control"` | read: `app.run.services` and `list`. control: also `start`, `stop`, `restart` |
+| `containers` | `"none"`, `"read"` or `"control"` | read: containers, volumes, images, networks, logs. control: also `stop`, `restart`, `remove` |
 | `theme` | `true` | switch the active theme, register themes |
 | `settings` | `true` | read and write Jensen's own settings, never secrets |
 | `graph`, `knowledge`, `git` | `true` | the code graph, the knowledge base, git history and semantic diff |
 | `network` | list of hosts | https requests to those hosts through `app.net.fetch(host, path)` |
 
 `jensen-plugin validate` rejects unknown keys, non boolean values for boolean keys, an `editor` other than
-`none`, `read` or `write`, non string lists, and `fs` entries that are absolute, empty, contain `..` or `.`
-segments, or use backslashes.
+`none`, `read` or `write`, a `run` or `containers` other than `none`, `read` or `control`, non string lists, and
+`fs` or `fsRead` entries that are absolute, empty, contain `..` or `.` segments, or use backslashes. A name
+pattern is a prefix and one trailing star, such as `Dockerfile*`, or `*.env`. The new keys need a Jensen that
+carries them, so raise `minAppVersion` with them.
+
+A backend reaches only what the plugin was granted. Its `fs::read` and `fs::list` follow `fs` and `fsRead`, its
+`fs::write` and `fs::remove` need `fs`, and `host_api::call` needs the permission of the method it runs, for
+example `containers` for `containers::logs`. Viewer toolbars and `editor.retarget` need `editor: "read"`.
 
 ## What needs nothing
 
@@ -31,8 +42,9 @@ registering or moving panes needs `workspace`.
 ## Capability names in errors
 
 When a call is refused, `HostError.capability` is one of `none`, `graph`, `knowledge`, `git`, `workspace`,
-`theme`, `settings`, `editor:read`, `editor:write`, `fs`, `network`. Map it back to the manifest key: `editor:read`
-and `editor:write` both come from `editor`.
+`theme`, `settings`, `editor:read`, `editor:write`, `fs`, `network`, `sessions`, `run:read`, `run:control`,
+`containers:read`, `containers:control`, `backend`. Map it back to the manifest key: `editor:read` and `editor:write` both
+come from `editor`, `run:*` from `run` and `containers:*` from `containers`.
 
 Protocol method to capability, for the cases that surprise people:
 

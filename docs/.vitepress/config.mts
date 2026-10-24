@@ -4,7 +4,7 @@ export default defineConfig({
   base: process.env.DOCS_BASE ?? "/",
   title: "Jensen plugins",
   description:
-    "Build extensions for Jensen: panes, commands, hotkeys, settings and access to files, the editor, the layout and the theme.",
+    "Build extensions for Jensen: panes, commands, hotkeys, settings and access to files, the editor, the layout and the theme, with an optional Rust backend.",
   themeConfig: {
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
@@ -23,6 +23,8 @@ export default defineConfig({
           { text: "Files", link: "/guide/files" },
           { text: "Viewer toolbars", link: "/guide/viewers" },
           { text: "A Rust backend", link: "/guide/backend" },
+          { text: "Sessions, Run and containers", link: "/guide/project-state" },
+          { text: "Acting on Run and containers", link: "/guide/project-actions" },
           { text: "The theme", link: "/guide/theme" },
           { text: "Menus and the status strip", link: "/guide/menus" },
           { text: "Testing", link: "/guide/testing" },

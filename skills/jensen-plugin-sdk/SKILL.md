@@ -1,12 +1,14 @@
 ---
 name: jensen-plugin-sdk
-description: Use when building, debugging, testing or publishing a plugin for the Jensen app with @jensen-org/plugin-sdk. Covers the Plugin class, panes (PaneView and CustomPaneView), commands and hotkeys, settings tabs, menus, the status bar, files, the editor, themes, permissions in the package.json "jensen" block, TestHost tests, and the jensen-plugin CLI (create, build, dev, validate, publish, skill install). Trigger on imports from @jensen-org/plugin-sdk, a package.json with a "jensen" block, HostError, or any request to extend Jensen.
+description: Use when building, debugging, testing or publishing a plugin for the Jensen app with @jensen-org/plugin-sdk, including its optional Rust backend (the jensen-plugin-backend crate, WebAssembly, agent tools). Covers the Plugin class, panes, commands and hotkeys, settings tabs, menus, the status bar, files and binary files, viewer toolbars, the editor, themes, permissions in the package.json "jensen" block, TestHost tests, cargo tests for the backend, and the jensen-plugin CLI (create, build, dev, validate, publish, skill install). Trigger on imports from @jensen-org/plugin-sdk, a package.json with a "jensen" block, a backend/Cargo.toml using jensen-plugin-backend, HostError, or any request to extend Jensen.
 ---
 
 # Jensen plugin SDK
 
 `@jensen-org/plugin-sdk` is the only dependency a Jensen plugin needs. A plugin is one class that extends
-`Plugin`, registers what it adds in `onload()`, and talks to the Jensen app through a typed protocol.
+`Plugin`, registers what it adds in `onload()`, and talks to the Jensen app through a typed protocol. A plugin
+may also ship a **Rust backend**, a WebAssembly program built with the `jensen-plugin-backend` crate, for heavy
+work and for tools that AI agents call. Most plugins need no backend, see [backend](references/backend.md).
 
 This skill is installed in two places by `jensen-plugin skill install`: `.agents/skills/jensen-plugin-sdk`
 (read by coding agents that look there) and `.claude/skills/jensen-plugin-sdk` (Claude Code).
@@ -20,6 +22,9 @@ Both hold the same files.
 - Permissions are declared once in `package.json` under `jensen.permissions`. The user is asked before
   anything is granted, and Jensen enforces the grant on every call, so a missing permission shows up as a
   rejected call at runtime, not as a type error.
+- The backend, when there is one, is a second program: `backend.wasm` runs in its own sandbox, answers JSON
+  methods, and reaches only the files and capabilities the plugin was granted. The UI calls it with
+  `this.app.backend`, agents call it through the `tools` the manifest declares.
 - Jensen has exactly three pages (`session`, `code`, `notes`) and no API to add pages. A plugin adds panes.
 - Lifecycle: the SDK's `start()` says hello, constructs your class, runs `onload()`, then reports ready. The
   `register*`, `add*` and `on(...)` methods return a `Disposable` or `EventRef` and are undone, newest first,
@@ -36,6 +41,7 @@ my-plugin/
   README.md        required: shown to the user before install, say why each permission is asked
   src/main.ts      default export is the Plugin subclass
   tsconfig.json    strict, moduleResolution Bundler, lib ES2022 and DOM
+  backend/         only with a backend: Cargo.toml and src/lib.rs, built to backend.wasm
 ```
 
 Manifest, the `jensen` block of `package.json`:
@@ -63,11 +69,14 @@ the validator rejects them. Permission keys are listed in [permissions](referenc
 ## Golden workflow
 
 1. Scaffold: `npx @jensen-org/plugin-sdk create my-plugin` (flags `--yes --name --id --description --author`,
-   and `--no-skill` to skip installing this skill). The scaffold already includes a pane, a settings tab and a command.
+   `--backend` for a Rust backend, and `--no-skill` to skip installing this skill). The scaffold already includes
+   a pane, a settings tab and a command, or with `--backend` a viewer toolbar that calls the backend.
 2. Develop: `jensen-plugin dev` rebuilds `main.js` on every change. `--publish` also reassembles `release/`.
 3. Check: `jensen-plugin validate` checks the `jensen` block and README without building. `tsc --noEmit`
-   typechecks. `jensen-plugin build [--minify]` writes `main.js`.
-4. Test with `TestHost` from `@jensen-org/plugin-sdk/testing`, see [testing](references/testing.md).
+   typechecks. `jensen-plugin build [--minify]` writes `main.js`, and runs `jensen.backendBuild` first when a
+   backend is declared (needs `rustup target add wasm32-unknown-unknown`).
+4. Test with `TestHost` from `@jensen-org/plugin-sdk/testing`, see [testing](references/testing.md). Test the
+   backend with `cargo test --manifest-path backend/Cargo.toml`, see [backend](references/backend.md).
 5. Publish: `jensen-plugin publish` validates, builds, writes `release/` and prints the store entry. Add
    `--release` to create the GitHub release and `--store-pr` to open the store pull request, see
    [publishing](references/publishing.md).
@@ -146,6 +155,9 @@ What lives where, all on `this` (a `Plugin`) or `this.app` (an `App`):
 | Theme | `this.app.theme` (`current`, `on("change")`, `set`, `register`, `applyTo`) |
 | Other commands | `this.app.commands.execute(id)`, `list()`, `this.app.keymap.get(id)` |
 | Code graph, knowledge, git, network | `this.app.graph`, `knowledge`, `git`, `net.fetch(host, path)` |
+| Rust backend | `await this.app.backend.call<T>(method, input)`, `run<T>` also returns `touched` paths |
+| Viewer toolbar | `this.registerViewerToolbar(id, { kinds, extensions }, ({ path }) => nodes)`, `this.app.viewer` |
+| Binary files, tabs | `this.app.files.readBytes`, `writeBytes`, `this.app.editor.retarget(from, to)` |
 
 Where to read more, one line each:
 
@@ -153,6 +165,9 @@ Where to read more, one line each:
 - [panes-and-ui](references/panes-and-ui.md): every `ui` node builder, pane state, handlers, custom panes, opening panes.
 - [settings](references/settings.md): settings tabs, every control, persisting data, Jensen's own settings.
 - [files-editor-theme](references/files-editor-theme.md): reading and writing files, editor edits, decorations, themes, events.
+- [backend](references/backend.md): the Rust half: when to add one, setup, the crate API, `tools` for agents, calling, testing, publishing.
+- [viewers-and-binary-files](references/viewers-and-binary-files.md): viewer toolbars, bytes, file type scopes, retargeting a tab.
+- [sessions-run-containers](references/sessions-run-containers.md): reading sessions, worktrees, Run and containers, with their events.
 - [permissions](references/permissions.md): the manifest permission keys, what each gates, how to ask for the least.
 - [testing](references/testing.md): `TestHost`, answering calls, driving callbacks, running a built `main.js`.
 - [publishing](references/publishing.md): `release/`, the store entry, GitHub release, store pull request, registries.
@@ -176,6 +191,10 @@ Where to read more, one line each:
 - Importing Node APIs or the DOM of the app. Only `CustomPaneView` has a DOM, and it is a sandboxed frame.
 - Running plugin code outside Jensen, for example importing `main.js` in a script. Connecting without a port
   throws `NotInJensenError`. Use `TestHost` in tests.
+- A backend without `permissions.backend: true`, or `tools` without `jensen.backend`. `validate` flags both.
+- Adding a backend when TypeScript would do. It is for heavy work and for agent tools, nothing else.
+- A crate `tag` that differs from the SDK version, or a missing `wasm32-unknown-unknown` target.
+- A backend call that runs past 30 seconds is stopped. Use `wait::until` for waiting, never a loop.
 - Forgetting `README.md`. `validate`, `build` and `publish` fail without it.
 - Hand writing a wrapper entry. `jensen-plugin build` generates it and calls `start()` for you.
 
@@ -197,4 +216,5 @@ method.
 - [ ] `tsc --noEmit` is clean and tests pass
 - [ ] `jensen-plugin build` produces `main.js`, and the README says what the plugin does
 - [ ] `jensen-plugin publish` prints a store entry with no problems, and `repo` is public for the official store
+- [ ] With a backend: `jensen.backend`, `backendBuild` and `tools` set, `cargo test` passes, `minAppVersion` at least 0.3.0
 - [ ] Version bumped, and `gh auth login` done before `--release` or `--store-pr`
