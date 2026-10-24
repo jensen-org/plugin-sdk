@@ -5,6 +5,8 @@
       "**",
       "!**/dist",
       "!**/node_modules",
+      "!**/target",
+      "!.jensen",
       "!**/.vitepress/cache",
       "!**/.vitepress/dist",
       "!src/protocol/generated.ts",

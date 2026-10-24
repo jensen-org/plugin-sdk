@@ -39,7 +39,7 @@ several, `toDisposable(fn)` wraps a function.
 ## App
 
 `this.app` members: `workspace`, `editor`, `files`, `theme`, `commands`, `keymap`, `settings` (Jensen's own
-settings), `graph`, `knowledge`, `git`, `net`, plus `pluginId`, `appVersion`, `isSurface`, `hello`,
+settings), `graph`, `knowledge`, `git`, `net`, `backend`, `viewer`, plus `pluginId`, `appVersion`, `isSurface`, `hello`,
 `connection` and `call(method, params)` for a raw protocol call (prefer the classes).
 
 Event emitters (`workspace`, `editor`, `files`, `theme`, `settings`) share `on(name, listener)` returning an
@@ -62,6 +62,13 @@ Services return `Promise<T>` where `T` defaults to `unknown`, so pass a type arg
 `knowledge`: `search`, `ingest`. `git`: `history`, `semanticDiff`. `net.fetch(host, path, options)` returns
 `{ status, body }` for an https host listed under `network`. `app.project` is `{ id, name }` or undefined. `sessions`,
 `worktrees`, `run` and `containers` are covered in [sessions-run-containers](sessions-run-containers.md).
+
+`backend` is `Backend`: `call<T>(method, input?)` returns the result, `run<T>(method, input?)` returns a
+`BackendResult<T>` of `{ result, touched }`, where `touched` lists the project paths the backend wrote or deleted.
+`viewer` is `Viewer`: `active` is a `ViewerFile` (`{ path, kind }`) or `null`, `refresh(toolbarId)` redraws a
+toolbar, and `on("change", listener)` follows the focused viewer. `files` also has `readBytes` and `writeBytes`,
+`editor` also has `retarget(from, to)`. `Plugin.registerViewerToolbar(id, match, render)` takes a `ViewerMatch`
+of `{ kinds?, extensions? }`. See [backend](backend.md) and [viewers-and-binary-files](viewers-and-binary-files.md).
 
 ## UI classes
 
